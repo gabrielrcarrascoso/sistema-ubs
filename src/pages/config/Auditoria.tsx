@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { ok, useConsulta } from '../lib/hooks';
-import type { RegistroAuditoria } from '../lib/types';
-import { dataHoraBR } from '../lib/util';
-import { Cabecalho, Carregando, Erro, Modal, Painel } from '../components/ui';
+import { supabase } from '../../lib/supabase';
+import { ok, useConsulta } from '../../lib/hooks';
+import type { RegistroAuditoria } from '../../lib/types';
+import { dataHoraBR } from '../../lib/util';
+import { BarraAba, Dica, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 const NOME_TABELA: Record<string, string> = {
   unidades: 'Unidades', perfis: 'Usuários', atividades: 'Atividades', equipes: 'Equipes', competencias: 'Matriz',
@@ -34,7 +34,10 @@ export function Auditoria() {
 
   return (
     <>
-      <Cabecalho titulo="Auditoria" subtitulo="Rastreabilidade: quem alterou o quê, quando e qual era o valor anterior." />
+      <Dica id="config-historico">
+        Tudo o que é criado, alterado ou removido no sistema fica registrado aqui: <b>quem</b>, <b>quando</b> e <b>o que mudou</b>. Clique em <b>Detalhes</b> para ver o valor antes e depois.
+      </Dica>
+      <BarraAba texto="Rastreabilidade: quem alterou o quê, quando e qual era o valor anterior." />
       <Erro mensagem={erro} />
 
       <Painel titulo="Filtros">

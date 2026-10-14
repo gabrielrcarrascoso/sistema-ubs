@@ -5,25 +5,17 @@ import { supabaseConfigurado } from './lib/supabase';
 import { Layout } from './components/Layout';
 import { Carregando } from './components/ui';
 import { Login, Cadastro, RecuperarSenha, NovaSenha, AguardandoAprovacao, ConfiguracaoPendente } from './pages/Acesso';
-import { PainelGeral } from './pages/PainelGeral';
-import { Unidades } from './pages/Unidades';
-import { Matriz } from './pages/Matriz';
-import { Restricoes } from './pages/Restricoes';
-import { Coleta } from './pages/Coleta';
-import { PainelIndicadores } from './pages/PainelIndicadores';
-import { Lancamentos } from './pages/Lancamentos';
-import { Dicionario } from './pages/Dicionario';
-import { Qualidade } from './pages/Qualidade';
-import { Usuarios } from './pages/Usuarios';
-import { Auditoria } from './pages/Auditoria';
-import { MeuPerfil } from './pages/MeuPerfil';
-import { CamposFicha } from './pages/CamposFicha';
+import { Inicio } from './pages/Inicio';
+import { PaginaUBS } from './pages/ubs/PaginaUBS';
 import { Questionarios } from './pages/Questionarios';
 import { QuestionarioEditar } from './pages/QuestionarioEditar';
 import { QuestionarioResponder } from './pages/QuestionarioResponder';
 import { QuestionarioResultados } from './pages/QuestionarioResultados';
+import { PaginaIndicadores } from './pages/indicadores/PaginaIndicadores';
+import { Configuracoes } from './pages/config/Configuracoes';
+import { MeuPerfil } from './pages/MeuPerfil';
 
-/** Só deixa passar quem está logado E foi aprovado por um gestor */
+/** Só deixa passar quem está logado E foi aprovado pelo administrador geral */
 function Protegida({ children }: { children: ReactNode }) {
   const { carregando, sessao, perfil } = useAuth();
   if (carregando) return <Carregando />;
@@ -46,6 +38,20 @@ function Publica({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// Endereços da versão anterior continuam funcionando (favoritos, links enviados)
+const REDIRECIONAMENTOS: [string, string][] = [
+  ['unidades', '/ubs'],
+  ['matriz', '/ubs?aba=equipe'],
+  ['restricoes', '/ubs?aba=restricoes'],
+  ['coleta', '/ubs?aba=coletas'],
+  ['lancamentos', '/indicadores?aba=lancar'],
+  ['dicionario', '/indicadores?aba=definicoes'],
+  ['qualidade', '/indicadores?aba=qualidade'],
+  ['usuarios', '/configuracoes?aba=usuarios'],
+  ['campos-ficha', '/configuracoes?aba=ficha'],
+  ['auditoria', '/configuracoes?aba=historico'],
+];
+
 export function App() {
   if (!supabaseConfigurado) return <ConfiguracaoPendente />;
 
@@ -58,23 +64,18 @@ export function App() {
       <Route path="/aguardando" element={<AguardandoAprovacao />} />
 
       <Route element={<Protegida><Layout /></Protegida>}>
-        <Route index element={<PainelGeral />} />
-        <Route path="unidades" element={<Unidades />} />
-        <Route path="matriz" element={<Matriz />} />
-        <Route path="restricoes" element={<Restricoes />} />
-        <Route path="coleta" element={<Coleta />} />
-        <Route path="indicadores" element={<PainelIndicadores />} />
-        <Route path="lancamentos" element={<Lancamentos />} />
-        <Route path="dicionario" element={<Dicionario />} />
-        <Route path="qualidade" element={<Qualidade />} />
-        <Route path="perfil" element={<MeuPerfil />} />
+        <Route index element={<Inicio />} />
+        <Route path="ubs" element={<PaginaUBS />} />
         <Route path="questionarios" element={<Questionarios />} />
         <Route path="questionarios/:id/responder" element={<QuestionarioResponder />} />
         <Route path="questionarios/:id/resultados" element={<QuestionarioResultados />} />
         <Route path="questionarios/:id/editar" element={<SoGestor><QuestionarioEditar /></SoGestor>} />
-        <Route path="campos-ficha" element={<SoGestor><CamposFicha /></SoGestor>} />
-        <Route path="usuarios" element={<SoGestor><Usuarios /></SoGestor>} />
-        <Route path="auditoria" element={<SoGestor><Auditoria /></SoGestor>} />
+        <Route path="indicadores" element={<PaginaIndicadores />} />
+        <Route path="configuracoes" element={<SoGestor><Configuracoes /></SoGestor>} />
+        <Route path="perfil" element={<MeuPerfil />} />
+        {REDIRECIONAMENTOS.map(([de, para]) => (
+          <Route key={de} path={de} element={<Navigate to={para} replace />} />
+        ))}
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { supabase, traduzErro } from '../lib/supabase';
-import { useConsulta } from '../lib/hooks';
-import { buscarIndicadores, descreverFormula, NOME_TIPO } from '../lib/indicadores';
-import type { Indicador, TipoIndicador } from '../lib/types';
-import { baixarCSV, dataHoraBR, numOuNull, valorIndicador } from '../lib/util';
-import { Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase, traduzErro } from '../../lib/supabase';
+import { useConsulta } from '../../lib/hooks';
+import { buscarIndicadores, descreverFormula, NOME_TIPO } from '../../lib/indicadores';
+import type { Indicador, TipoIndicador } from '../../lib/types';
+import { baixarCSV, dataHoraBR, numOuNull, valorIndicador } from '../../lib/util';
+import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 const NOVO: Partial<Indicador> = {
   tipo: 'percentual',
@@ -79,9 +79,10 @@ export function Dicionario() {
 
   return (
     <>
-      <Cabecalho
-        titulo="Dicionário de dados"
-        subtitulo="Nome, definição, fórmula, fonte e meta de cada indicador — a mesma regra para todas as unidades."
+      <Dica id="ind-definicoes">
+        A “receita” de cada indicador: o que conta, como calcula, de onde vem o dado e qual a meta. Assim todas as UBS calculam do mesmo jeito.
+      </Dica>
+      <BarraAba texto="Nome, definição, fórmula, fonte e meta de cada indicador — a mesma regra para todas as unidades."
         acoes={
           <>
             <button className="btn" onClick={exportar}>↓ Exportar dicionário</button>

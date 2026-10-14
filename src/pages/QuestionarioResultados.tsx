@@ -63,6 +63,7 @@ export function QuestionarioResultados() {
         acoes={
           <>
             <Link className="btn" to="/questionarios">← Voltar</Link>
+            <button className="btn" onClick={() => window.print()}>🖨 Imprimir</button>
             <button className="btn" onClick={exportar} disabled={!aplicacoes.length}>↓ Exportar respostas (CSV)</button>
             {q.status === 'aberto' && <Link className="btn primary" to={`/questionarios/${q.id}/responder`}>+ Responder</Link>}
           </>

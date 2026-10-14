@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Nivel, Unidade } from '../lib/types';
 import { CLASSE_NIVEL, NOME_NIVEL } from '../lib/util';
 
@@ -115,5 +116,79 @@ export function SeletorUnidade({
         </option>
       ))}
     </select>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Abas internas de uma página (a aba escolhida fica no endereço: ?aba=...)
+// ---------------------------------------------------------------------------
+export interface DefAba {
+  id: string;
+  rotulo: string;
+  oculta?: boolean;
+}
+
+export function useAba(abas: DefAba[], padrao: string) {
+  const [params, setParams] = useSearchParams();
+  const visiveis = abas.filter(a => !a.oculta);
+  const pedida = params.get('aba');
+  const atual = visiveis.some(a => a.id === pedida) ? pedida! : padrao;
+  const mudar = (id: string) => {
+    const novos = new URLSearchParams(params);
+    novos.set('aba', id);
+    setParams(novos, { replace: true });
+  };
+  return [atual, mudar] as const;
+}
+
+export function BarraDeAbas({ abas, atual, aoMudar }: { abas: DefAba[]; atual: string; aoMudar: (id: string) => void }) {
+  return (
+    <div className="abas" role="tablist">
+      {abas
+        .filter(a => !a.oculta)
+        .map(a => (
+          <button key={a.id} role="tab" aria-selected={a.id === atual} className={a.id === atual ? 'aba ativa' : 'aba'} onClick={() => aoMudar(a.id)}>
+            {a.rotulo}
+          </button>
+        ))}
+    </div>
+  );
+}
+
+/** Linha com explicação curta + botões, usada no topo de cada aba */
+export function BarraAba({ texto, acoes }: { texto?: ReactNode; acoes?: ReactNode }) {
+  return (
+    <div className="barra-aba">
+      <p>{texto}</p>
+      {acoes && <div className="actions">{acoes}</div>}
+    </div>
+  );
+}
+
+/** Caixa "Como usar" que a pessoa pode recolher; o navegador lembra a escolha */
+export function Dica({ id, children }: { id: string; children: ReactNode }) {
+  const chave = `sistema-ubs:dica:${id}`;
+  const [aberta, setAberta] = useState(() => {
+    try {
+      return localStorage.getItem(chave) !== 'fechada';
+    } catch {
+      return true;
+    }
+  });
+  const alternar = () => {
+    setAberta(!aberta);
+    try {
+      localStorage.setItem(chave, aberta ? 'fechada' : 'aberta');
+    } catch {
+      /* sem armazenamento */
+    }
+  };
+  return (
+    <div className={`dica ${aberta ? '' : 'fechada'} nao-imprimir`}>
+      <button className="dica-titulo" onClick={alternar} aria-expanded={aberta}>
+        💡 Como usar esta tela <span>{aberta ? 'esconder' : 'mostrar'}</span>
+      </button>
+      {aberta && <div className="dica-texto">{children}</div>}
+    </div>
   );
 }

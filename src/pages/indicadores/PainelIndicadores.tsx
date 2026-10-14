@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { buscarUnidades, useConsulta } from '../lib/hooks';
-import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../lib/indicadores';
-import type { Lancamento } from '../lib/types';
-import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../lib/util';
-import { GraficoBarras } from '../components/GraficoBarras';
-import { Cabecalho, Carregando, Cartao, Erro, Painel } from '../components/ui';
+import { buscarUnidades, useConsulta } from '../../lib/hooks';
+import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../../lib/indicadores';
+import type { Lancamento } from '../../lib/types';
+import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../../lib/util';
+import { GraficoBarras } from '../../components/GraficoBarras';
+import { BarraAba, Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
 
 export function PainelIndicadores() {
   const [unidadeId, setUnidadeId] = useState('');
@@ -52,10 +52,11 @@ export function PainelIndicadores() {
 
   return (
     <>
-      <Cabecalho
-        titulo="Painel de indicadores"
-        subtitulo="Dados padronizados, fórmulas únicas e rastreabilidade — APS Data & Performance."
-        acoes={<Link to="/lancamentos" className="btn primary">+ Lançar dados</Link>}
+      <Dica id="ind-painel">
+        Resumo dos indicadores. Escolha <b>uma UBS</b> ou veja <b>todas juntas</b>. Valores em <b>verde</b> atingiram a meta; em <b>vermelho</b>, não atingiram.
+      </Dica>
+      <BarraAba texto="Dados padronizados, fórmulas únicas e rastreabilidade — APS Data & Performance."
+        acoes={<Link to="/indicadores?aba=lancar" className="btn primary">+ Lançar dados</Link>}
       />
 
       <Painel titulo="Visão">
@@ -74,7 +75,7 @@ export function PainelIndicadores() {
 
       {lancamentos.length === 0 && (
         <div className="alert" style={{ marginBottom: 20 }}>
-          Ainda não há lançamentos. Registre os números mensais em <Link to="/lancamentos">Lançamentos</Link> (um a um ou
+          Ainda não há lançamentos. Registre os números mensais em <Link to="/indicadores?aba=lancar">Lançamentos</Link> (um a um ou
           importando uma planilha) para o painel ganhar vida.
         </div>
       )}

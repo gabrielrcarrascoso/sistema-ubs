@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { supabase, traduzErro } from '../lib/supabase';
-import { buscarUnidades, ok, useConsulta, useUnidadeEscolhida } from '../lib/hooks';
-import type { Pendencia, Restricao } from '../lib/types';
-import { Cabecalho, Campo, Carregando, Erro, Modal, Painel, SeletorUnidade } from '../components/ui';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase, traduzErro } from '../../lib/supabase';
+import { ok, useConsulta } from '../../lib/hooks';
+import type { Pendencia, Restricao, Unidade } from '../../lib/types';
+import { Campo, Carregando, Dica, Erro, Modal, Painel } from '../../components/ui';
 
 const STATUS_SUGERIDOS = [
   'Confirmado em entrevista',
@@ -18,10 +18,10 @@ const STATUS_SUGERIDOS = [
 ];
 const ehAlerta = (s: string | null) => /Divergente|Inconsistente|Lacuna/i.test(s ?? '');
 
-export function Restricoes() {
-  const { perfil, podeEditar, ehGestor } = useAuth();
-  const unidadesQ = useConsulta(buscarUnidades, []);
-  const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
+/** Restrições operacionais e pendências de coleta de uma UBS */
+export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidades: Unidade[] }) {
+  const { podeEditar, ehGestor } = useAuth();
+  const unidadeId = unidade.id;
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [restricao, setRestricao] = useState<Partial<Restricao> | null>(null);
   const [pendencia, setPendencia] = useState<Partial<Pendencia> | null>(null);
@@ -41,8 +41,6 @@ export function Restricoes() {
     return { restricoes, pendencias };
   }, [unidadeId]);
 
-  if (unidadesQ.carregando) return <Carregando />;
-  const unidades = unidadesQ.dados ?? [];
   const editavel = podeEditar(unidadeId);
   const podeMexerPendencia = (p: Partial<Pendencia>) => (p.unidade_id ? podeEditar(p.unidade_id) : ehGestor);
   const pesoPrioridade = { Alta: 0, Média: 1, Baixa: 2 };
@@ -98,14 +96,11 @@ export function Restricoes() {
 
   return (
     <>
-      <Cabecalho titulo="Restrições operacionais" subtitulo="Informações observadas, lacunas e dados para validar." />
-      <Erro mensagem={erro || unidadesQ.erro || dadosQ.erro} />
-
-      <Painel titulo="Unidade de referência">
-        <div className="selectrow">
-          <SeletorUnidade unidades={unidades} valor={unidadeId} aoMudar={setUnidadeId} />
-        </div>
-      </Painel>
+      <Dica id="ubs-restricoes">
+        <b>Restrições</b> são limitações que afetam o trabalho da UBS (falta de sala, horário indefinido, equipe incompleta…).
+        <b> Pendências</b> são informações que ainda precisam ser levantadas. Marque <b>✓ Concluir</b> quando resolver.
+      </Dica>
+      <Erro mensagem={erro || dadosQ.erro} />
 
       <Painel
         titulo="Restrições e gargalos registrados"

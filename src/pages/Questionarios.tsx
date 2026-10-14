@@ -5,7 +5,7 @@ import { supabase, traduzErro } from '../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
 import type { Aplicacao, Pergunta, Questionario, StatusQuestionario } from '../lib/types';
 import { dataBR } from '../lib/util';
-import { Cabecalho, Campo, Carregando, Cartao, Erro, Modal } from '../components/ui';
+import { Cabecalho, Campo, Carregando, Cartao, Dica, Erro, Modal } from '../components/ui';
 
 export const NOME_STATUS: Record<StatusQuestionario, string> = {
   rascunho: 'Rascunho',
@@ -55,6 +55,17 @@ export function Questionarios() {
         subtitulo="Pesquisas aplicadas nas UBS: o administrador geral monta, cada UBS responde e o sistema compara os resultados."
         acoes={ehGestor && <button className="btn primary" onClick={() => setCriando({ titulo: '', descricao: '' })}>+ Novo questionário</button>}
       />
+      <Dica id="questionarios">
+        {ehGestor ? (
+          <ol>
+            <li>Clique em <b>+ Novo questionário</b> e adicione as perguntas.</li>
+            <li>Clique em <b>Abrir para respostas</b> — só então as UBS conseguem ver e responder.</li>
+            <li>Acompanhe em <b>Resultados</b> quem já respondeu e compare as respostas. Ao final, <b>Encerre</b>.</li>
+          </ol>
+        ) : (
+          <>Clique em <b>Responder</b> no questionário aberto e preencha pela sua UBS. Depois, veja tudo em <b>Resultados</b>.</>
+        )}
+      </Dica>
       <Erro mensagem={erroQ} />
 
       <div className="cards">

@@ -25,8 +25,8 @@ a { color: var(--primary); }
 .brand { display: flex; gap: 12px; align-items: center; padding: 5px 10px 20px; border-bottom: 1px solid #344f67; }
 .logo { background: #36b7a0; color: #092535; border-radius: 13px; font-weight: 900; padding: 11px 12px; }
 .brand small { display: block; color: #aac3d4; font-size: 11px; margin-top: 4px; }
-.menu { margin-top: 10px; display: grid; gap: 3px; }
-.nav { display: block; text-decoration: none; color: #cbdde9; padding: 10px 12px; border-radius: 10px; font-weight: 650; font-size: 14px; }
+.menu { margin-top: 18px; display: grid; gap: 6px; }
+.nav { display: block; text-decoration: none; color: #cbdde9; padding: 13px 14px; border-radius: 10px; font-weight: 700; font-size: 15px; }
 .nav:hover, .nav.active { background: #23445f; color: white; }
 .sub { font-size: 11px; letter-spacing: .11em; color: #92adbf; margin: 18px 10px 6px; text-transform: uppercase; }
 .side-user { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid #344f67; font-size: 12px; color: #a7c2d1; }
@@ -178,3 +178,49 @@ td.num, th.num { text-align: right; }
 .resultado:last-child { border-bottom: 0; }
 @media (max-width: 1100px) { .ficha-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 780px) { .ficha-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Abas internas ---------- */
+.abas { display: flex; gap: 4px; border-bottom: 2px solid #dfe7ef; margin: 0 0 20px; overflow-x: auto; }
+.aba { border: 0; background: none; padding: 11px 16px; font-weight: 750; font-size: 14px; color: #5d7185; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; border-radius: 8px 8px 0 0; }
+.aba:hover { color: var(--text); background: #eaf1f6; }
+.aba.ativa { color: var(--primary); border-bottom-color: var(--primary); }
+.barra-aba { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.barra-aba p { font-size: 14px; }
+
+/* ---------- Dicas ---------- */
+.dica { border: 1px solid #cfe6e3; background: #f1faf9; border-radius: 12px; margin-bottom: 18px; }
+.dica-titulo { width: 100%; text-align: left; border: 0; background: none; padding: 11px 14px; font-weight: 750; color: #1f6d66; display: flex; justify-content: space-between; }
+.dica-titulo span { font-weight: 600; font-size: 12px; text-decoration: underline; }
+.dica-texto { padding: 0 14px 13px; font-size: 13.5px; color: #2f5f5b; line-height: 1.6; }
+.dica-texto ol, .dica-texto ul { margin: 4px 0; padding-left: 20px; }
+
+/* ---------- Início ---------- */
+.tarefas { display: grid; gap: 10px; }
+.tarefa { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; text-decoration: none; color: inherit; }
+.tarefa:hover { border-color: var(--primary); }
+.tarefa .icone { font-size: 22px; width: 36px; text-align: center; }
+.tarefa .texto { flex: 1; }
+.tarefa .texto b { display: block; font-size: 14px; }
+.tarefa .texto small { color: var(--muted); font-size: 12.5px; }
+.tarefa .ir { color: var(--primary); font-weight: 800; white-space: nowrap; font-size: 13px; }
+.tarefa.alta { border-left: 4px solid #d08a1e; }
+.atalhos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.atalho { display: block; padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); text-decoration: none; color: inherit; }
+.atalho:hover { border-color: var(--primary); }
+.atalho b { display: block; margin: 8px 0 4px; }
+.atalho span { font-size: 26px; }
+.atalho small { color: var(--muted); font-size: 12px; }
+.progresso { height: 8px; border-radius: 5px; background: #e8eef3; overflow: hidden; margin-top: 8px; }
+.progresso div { height: 100%; background: linear-gradient(90deg, #51c6b4, #167d79); }
+@media (max-width: 1100px) { .atalhos { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- Impressão / PDF ---------- */
+@media print {
+  .side, .abas, .actions, .nao-imprimir, .btn, .dica, .selectrow select { display: none !important; }
+  .app { display: block; }
+  .main { padding: 0; max-width: none; }
+  body, :root { background: white; }
+  .panel, .card { box-shadow: none; break-inside: avoid; }
+  .cards { grid-template-columns: repeat(4, 1fr); }
+}
+.seletor-grande { font: inherit; font-weight: 750; font-size: 14px; padding: 9px 12px; border-radius: 9px; border: 2px solid var(--primary); background: white; color: var(--text); max-width: 100%; }

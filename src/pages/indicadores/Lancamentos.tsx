@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { supabase, traduzErro } from '../lib/supabase';
-import { buscarUnidades, useConsulta } from '../lib/hooks';
-import { buscarIndicadores, buscarLancamentos, calcularValor } from '../lib/indicadores';
-import type { Indicador, Lancamento, Unidade } from '../lib/types';
-import { baixarCSV, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../lib/util';
-import { Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase, traduzErro } from '../../lib/supabase';
+import { buscarUnidades, useConsulta } from '../../lib/hooks';
+import { buscarIndicadores, buscarLancamentos, calcularValor } from '../../lib/indicadores';
+import type { Indicador, Lancamento, Unidade } from '../../lib/types';
+import { baixarCSV, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../../lib/util';
+import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 interface Formulario {
   id?: string;
@@ -121,9 +121,10 @@ export function Lancamentos() {
 
   return (
     <>
-      <Cabecalho
-        titulo="Lançamentos de indicadores"
-        subtitulo="Registro mensal dos dados de cada unidade, com fonte e versão da fórmula."
+      <Dica id="ind-lancar">
+        Todo mês, registre os números de cada indicador por UBS (tirados do e-SUS/PEC). Use <b>+ Novo lançamento</b> para um número, ou <b>Importar planilha</b> para vários de uma vez. O sistema calcula o resultado sozinho.
+      </Dica>
+      <BarraAba texto="Registro mensal dos dados de cada unidade, com fonte e versão da fórmula."
         acoes={
           <>
             <button className="btn" onClick={exportar}>↓ Exportar CSV</button>

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { supabase, traduzErro } from '../lib/supabase';
-import { buscarUnidades, ok, useConsulta, useUnidadeEscolhida } from '../lib/hooks';
-import type { Coleta as ColetaT } from '../lib/types';
-import { baixarCSV, dataBR, numeroBR, numOuNull } from '../lib/util';
-import { Cabecalho, Campo, Carregando, Cartao, Erro, Painel, SeletorUnidade } from '../components/ui';
+import { useAuth } from '../../auth/AuthProvider';
+import { supabase, traduzErro } from '../../lib/supabase';
+import { ok, useConsulta } from '../../lib/hooks';
+import type { Coleta as ColetaT, Unidade } from '../../lib/types';
+import { baixarCSV, dataBR, numeroBR, numOuNull } from '../../lib/util';
+import { BarraAba, Campo, Carregando, Cartao, Dica, Erro, Painel } from '../../components/ui';
 
 type Formulario = Partial<ColetaT>;
 
@@ -20,10 +20,10 @@ export function calcularCapacidade(c: Formulario) {
   return { necessaria, capacidade, ocupacao: (necessaria / capacidade) * 100, folga: capacidade - necessaria };
 }
 
-export function Coleta() {
+/** Visitas de campo e cálculo de capacidade de uma UBS */
+export function AbaColetas({ unidade }: { unidade: Unidade }) {
   const { perfil, podeEditar } = useAuth();
-  const unidadesQ = useConsulta(buscarUnidades, []);
-  const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
+  const unidadeId = unidade.id;
   const [form, setForm] = useState<Formulario>({ responsavel: perfil?.nome ?? '' });
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -39,9 +39,6 @@ export function Coleta() {
     [unidadeId],
   );
 
-  if (unidadesQ.carregando) return <Carregando />;
-  const unidades = unidadesQ.dados ?? [];
-  const unidade = unidades.find(u => u.id === unidadeId);
   const editavel = podeEditar(unidadeId);
   const calculo = calcularCapacidade(form);
 
@@ -111,26 +108,17 @@ export function Coleta() {
 
   return (
     <>
-      <Cabecalho
-        titulo="Coleta e capacidade"
-        subtitulo="Registre dados de campo e visualize estimativas simples de carga."
-        acoes={<button className="btn" onClick={exportarTudo}>↓ Exportar coletas (CSV)</button>}
-      />
-      <Erro mensagem={erro || unidadesQ.erro || coletasQ.erro} />
+      <Dica id="ubs-coletas">
+        Registre aqui cada <b>visita de campo</b> à UBS. Preencha a demanda semanal de uma atividade, o tempo médio de
+        atendimento, quantos profissionais podem fazê-la e quantas horas por semana cada um tem — o sistema calcula se a
+        equipe dá conta. Cada visita fica guardada no histórico. <b>Não insira dados de pacientes.</b>
+      </Dica>
+      <BarraAba acoes={<button className="btn" onClick={exportarTudo}>↓ Exportar coletas de todas as UBS</button>} />
+      <Erro mensagem={erro || coletasQ.erro} />
       {aviso && <div className="info" style={{ marginBottom: 14 }}>{aviso}</div>}
 
-      <Painel titulo="Unidade">
-        <div className="selectrow">
-          <SeletorUnidade unidades={unidades} valor={unidadeId} aoMudar={id => { setUnidadeId(id); setForm({ responsavel: perfil?.nome ?? '' }); }} />
-          <span className="chip">Salvo no banco · sincronizado</span>
-        </div>
-        <p className="muted" style={{ marginTop: 10 }}>
-          Cada visita fica guardada no histórico abaixo. <b>Não insira dados de pacientes.</b>
-        </p>
-      </Painel>
-
       {editavel ? (
-        <Painel titulo={`${form.id ? 'Editar ficha' : 'Nova ficha'} — ${unidade?.nome ?? ''}`}>
+        <Painel titulo={`${form.id ? 'Editar visita' : 'Registrar nova visita'} — ${unidade.nome}`}>
           <form onSubmit={salvar}>
             <div className="form-grid">
               <Campo rotulo="Responsável pela coleta"><input {...texto('responsavel')} /></Campo>
@@ -155,7 +143,7 @@ export function Coleta() {
               </Campo>
             </div>
             <div className="actions" style={{ marginTop: 15 }}>
-              <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : form.id ? 'Salvar alterações' : 'Registrar coleta'}</button>
+              <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : form.id ? 'Salvar alterações' : 'Registrar visita'}</button>
               {form.id && <button type="button" className="btn" onClick={() => setForm({ responsavel: perfil?.nome ?? '' })}>Cancelar edição</button>}
             </div>
           </form>
@@ -191,7 +179,7 @@ export function Coleta() {
         </Painel>
       )}
 
-      <Painel titulo="Histórico de coletas da unidade">
+      <Painel titulo="Histórico de visitas">
         {coletasQ.carregando ? (
           <Carregando />
         ) : (

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
-import { buscarIndicadores, buscarLancamentos } from '../lib/indicadores';
-import type { Coleta, Equipe } from '../lib/types';
-import { mesAno, numeroBR, ultimosMeses, valorIndicador } from '../lib/util';
-import { Cabecalho, Carregando, Cartao, Erro, Painel } from '../components/ui';
+import { supabase } from '../../lib/supabase';
+import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
+import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
+import type { Coleta, Equipe } from '../../lib/types';
+import { mesAno, numeroBR, ultimosMeses, valorIndicador } from '../../lib/util';
+import { BarraAba, Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
 
 interface Achado {
   gravidade: 'Alta' | 'Média' | 'Baixa';
@@ -102,7 +102,10 @@ export function Qualidade() {
 
   return (
     <>
-      <Cabecalho titulo="Controle de qualidade" subtitulo="Checagem automática de ausências, duplicidades, inconsistências e dados desatualizados." />
+      <Dica id="ind-qualidade">
+        O sistema confere sozinho se faltam lançamentos, se há números estranhos (ex.: acima de 100%) ou dados desatualizados. Comece corrigindo os alertas de gravidade <b>Alta</b>.
+      </Dica>
+      <BarraAba texto="Checagem automática de ausências, duplicidades, inconsistências e dados desatualizados." />
 
       <Painel titulo="Período avaliado">
         <div className="selectrow">
@@ -153,7 +156,7 @@ export function Qualidade() {
           <div className="callout"><b>Consistência</b><br />Percentuais acima de 100%, variações acima de 50% e fórmulas desatualizadas são sinalizados.</div>
         </div>
         <p className="muted" style={{ marginTop: 12 }}>
-          Corrija os dados em <Link to="/lancamentos">Lançamentos</Link> ou em <Link to="/unidades">Unidades e equipes</Link>. Cada alteração fica registrada na auditoria.
+          Corrija os dados em <Link to="/indicadores?aba=lancar">Lançamentos</Link> ou em <Link to="/ubs">Unidades e equipes</Link>. Cada alteração fica registrada na auditoria.
         </p>
       </Painel>
     </>

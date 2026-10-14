@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { supabase, traduzErro } from '../lib/supabase';
-import { ok, useConsulta } from '../lib/hooks';
-import type { CampoFicha, TipoCampo } from '../lib/types';
-import { lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../components/CampoDinamico';
-import { Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
+import { supabase, traduzErro } from '../../lib/supabase';
+import { ok, useConsulta } from '../../lib/hooks';
+import type { CampoFicha, TipoCampo, Unidade } from '../../lib/types';
+import { lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../../components/CampoDinamico';
+import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 export async function buscarCamposFicha(somenteAtivos = true): Promise<CampoFicha[]> {
   let q = supabase.from('campos_ficha').select('*').order('ordem').order('nome');
@@ -76,9 +76,10 @@ export function CamposFicha() {
 
   return (
     <>
-      <Cabecalho
-        titulo="Campos da ficha das UBS"
-        subtitulo="Defina quais informações cada UBS deve ter. Os administradores das UBS preenchem a ficha da própria unidade."
+      <Dica id="config-campos">
+        Aqui você decide <b>quais informações toda UBS deve ter</b>. Criou um campo? Ele aparece na hora na ficha de todas as UBS, e o administrador de cada uma preenche. Use <b>Desativar</b> para esconder sem perder o que já foi preenchido.
+      </Dica>
+      <BarraAba texto="Defina quais informações cada UBS deve ter. Os administradores das UBS preenchem a ficha da própria unidade."
         acoes={<button className="btn primary" onClick={() => setEditando({ tipo: 'texto', secao: secoes.at(-1) ?? 'Outras informações' })}>+ Novo campo</button>}
       />
       <Erro mensagem={(!editando && erro) || camposQ.erro} />
@@ -115,6 +116,8 @@ export function CamposFicha() {
           </div>
         </Painel>
       ))}
+
+      <UbsDesativadas />
 
       {editando && (
         <Modal titulo={editando.id ? `Editar campo` : 'Novo campo da ficha'} aoFechar={() => setEditando(null)}>
@@ -167,5 +170,34 @@ export function CamposFicha() {
         </Modal>
       )}
     </>
+  );
+}
+
+/** UBS desativadas pelo administrador geral, com opção de reativar */
+function UbsDesativadas() {
+  const [erro, setErro] = useState<string | null>(null);
+  const { dados, recarregar } = useConsulta(
+    async () => ok<Unidade[]>(await supabase.from('unidades').select('*').eq('ativa', false).order('nome')),
+    [],
+  );
+  if (!dados?.length) return null;
+
+  async function reativar(u: Unidade) {
+    if (!confirm(`Reativar "${u.nome}"? Ela volta a aparecer em todas as telas.`)) return;
+    const { error } = await supabase.from('unidades').update({ ativa: true }).eq('id', u.id);
+    if (error) return setErro(traduzErro(error));
+    recarregar();
+  }
+
+  return (
+    <Painel titulo="UBS desativadas">
+      <Erro mensagem={erro} />
+      {dados.map(u => (
+        <div className="item row-flex" key={u.id}>
+          <b>{u.nome}</b>
+          <button className="btn small" onClick={() => reativar(u)}>Reativar</button>
+        </div>
+      ))}
+    </Painel>
   );
 }

@@ -16,6 +16,21 @@ Sistema web de apoio à gestão das Unidades Básicas de Saúde (UBS), unindo du
 
 ---
 
+## Como o sistema está organizado
+
+O menu tem só **5 portas de entrada**; cada uma reúne várias funções em abas:
+
+| Menu | Abas / conteúdo | Quem vê |
+|---|---|---|
+| 🏠 **Início** | Atalhos + **“O que fazer agora”** (tarefas pendentes de cada pessoa) + UBS com % da ficha preenchida | Todos |
+| 🏥 **UBS** | Ficha · Equipe e atividades (matriz) · Restrições e pendências · Visitas de campo | Todos (edita quem administra a UBS) |
+| ✍ **Questionários** | Lista → Responder · Resultados · Editar perguntas | Todos (cria: administrador geral) |
+| 📊 **Indicadores** | Painel · Lançar dados · Qualidade dos dados · Definições | Todos (lança: administradores) |
+| ⚙ **Configurações** | Usuários · Ficha das UBS · Atividades da matriz · Histórico de alterações · Backup | Administrador geral |
+
+Cada tela tem uma caixa **💡 Como usar esta tela** (pode ser recolhida). Ficha da UBS e resultados de questionários
+têm botão **🖨 Imprimir** (também serve para salvar em PDF).
+
 ## Tecnologias (todas com plano gratuito)
 
 | Parte | Tecnologia | Para que serve |
@@ -47,7 +62,10 @@ sistema-ubs/
 │   ├── auth/                # controle do usuário logado
 │   ├── components/          # peças visuais reutilizáveis (menu, cartões, gráfico)
 │   ├── lib/                 # conexão com o Supabase, tipos, cálculos
-│   ├── pages/               # uma tela por arquivo
+│   ├── pages/               # telas: Inicio, Acesso, Questionários…
+│   │   ├── ubs/             # página da UBS e suas abas
+│   │   ├── indicadores/     # página de indicadores e suas abas
+│   │   └── config/          # configurações (administrador geral)
 │   └── styles.css           # visual
 ├── supabase/
 │   ├── migrations/          # SQL do banco, em ordem (estrutura, segurança, dados iniciais)
@@ -104,8 +122,12 @@ Abra o endereço que aparecer (ex.: http://localhost:5173).
    - Para a recuperação de senha funcionar para todos, configure um SMTP gratuito (ex.: Brevo, 300 e-mails/dia) em
      *Authentication → Emails → SMTP Settings*.
 
-> ⚠️ **Plano gratuito:** projetos Supabase sem uso por 7 dias são **pausados**. Para reativar, entre no painel do
-> Supabase e clique em *Restore project*. Os dados não são perdidos.
+> ⚠️ **Plano gratuito:** projetos Supabase sem uso por 7 dias são **pausados**. O workflow
+> `.github/workflows/manter-ativo.yml` consulta o banco a cada 3 dias para evitar isso. Se mesmo assim pausar, entre no
+> painel do Supabase e clique em *Restore project* (os dados não são perdidos). Observação: o GitHub desativa
+> agendamentos de repositórios sem nenhum commit há 60 dias — se isso acontecer, reative em *Actions → Manter banco ativo*.
+>
+> 💾 **Backup:** o plano gratuito não tem backup automático. Use *Configurações → Backup* uma vez por mês.
 
 ## Publicação no GitHub Pages
 
