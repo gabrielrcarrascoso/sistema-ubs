@@ -1,0 +1,27 @@
+# Roda os testes de segurança do banco e confere se o site compila a cada envio (push) para a main.
+# A publicação do site é feita pela Vercel, que acompanha este repositório.
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Testes de permissão do banco
+        run: npm run test:banco
+      - name: Compilação
+        run: npm run build

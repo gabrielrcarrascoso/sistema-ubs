@@ -73,7 +73,7 @@ sistema-ubs/
 │   ├── migrations/          # SQL do banco, em ordem (estrutura, segurança, dados iniciais)
 │   └── instalar_banco.sql   # todas as migrações juntas (gerado por npm run sql:juntar)
 ├── scripts/                 # testes do banco e utilitários
-└── .github/workflows/       # publicação automática no GitHub Pages
+└── .github/workflows/       # testes automáticos e agendamento que mantém o banco ativo
 ```
 
 ---
@@ -137,17 +137,8 @@ O site principal fica na **Vercel** (conta pessoal, plano Hobby gratuito), ligad
 cada `git push` na `main` publica uma nova versão em https://sistema-ubs.vercel.app automaticamente.
 Não é preciso configurar variáveis: os dados públicos de conexão estão em `.env.production`.
 
-### Alternativa: GitHub Pages
-
-1. Envie o código para um repositório no GitHub (branch `main`).
-2. No repositório: *Settings → Pages → Source:* **GitHub Actions**.
-3. Os dados de conexão do site publicado ficam em `.env.production` (URL e chave *publishable* do Supabase).
-4. Cada `git push` na `main` roda os testes do banco e publica o site automaticamente (aba *Actions* mostra o progresso).
-
-A chave *publishable* é pública por natureza: a segurança está nas regras RLS do banco. **Nunca** coloque a
-*secret key* / *service_role* no código.
-
----
+Além disso, o GitHub roda automaticamente os **testes do banco** e a **compilação** a cada envio
+(`.github/workflows/testes.yml`). Se algo quebrar, aparece um ❌ na aba *Actions* do repositório.
 
 ## Ficha da UBS e questionários
 
