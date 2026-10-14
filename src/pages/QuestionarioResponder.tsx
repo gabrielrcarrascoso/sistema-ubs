@@ -34,7 +34,8 @@ export function QuestionarioResponder() {
       buscarUnidades(),
       aplicacaoId ? supabase.from('aplicacoes').select('*').eq('id', aplicacaoId).single().then(ok<Aplicacao>) : Promise.resolve(null),
     ]);
-    return { questionario, perguntas, unidades, aplicacao };
+    const jaResponderam = ok<Pick<Aplicacao, 'unidade_id'>[]>(await supabase.from('aplicacoes').select('unidade_id').eq('questionario_id', id));
+    return { questionario, perguntas, unidades, aplicacao, jaResponderam: new Set(jaResponderam.map(a => a.unidade_id)) };
   }, [id, aplicacaoId]);
 
   // Preenche o formulário quando os dados chegam
@@ -48,8 +49,10 @@ export function QuestionarioResponder() {
       setObservacao(dados.aplicacao.observacao ?? '');
       setRespostas(dados.aplicacao.respostas ?? {});
     } else {
+      // sugere a própria UBS; para o administrador geral, a primeira que ainda não respondeu
       const propria = editaveis.find(u => u.id === perfil?.unidade_id);
-      setUnidadeId((propria ?? editaveis[0])?.id ?? '');
+      const pendente = editaveis.find(u => !dados.jaResponderam.has(u.id));
+      setUnidadeId((propria ?? pendente ?? editaveis[0])?.id ?? '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dados]);
@@ -119,7 +122,7 @@ export function QuestionarioResponder() {
           <div className="form-grid">
             <Campo rotulo="UBS" className="wide">
               <select required value={unidadeId} onChange={e => setUnidadeId(e.target.value)} disabled={!!aplicacaoId}>
-                {editaveis.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                {editaveis.map(u => <option key={u.id} value={u.id}>{u.nome}{dados.jaResponderam.has(u.id) && !aplicacaoId ? ' (já respondeu)' : ''}</option>)}
               </select>
             </Campo>
             <Campo rotulo="Data da aplicação">
@@ -147,7 +150,7 @@ export function QuestionarioResponder() {
                   tipo={p.tipo}
                   opcoes={p.opcoes}
                   valor={respostas[p.id]}
-                  aoMudar={v => setRespostas({ ...respostas, [p.id]: v })}
+                  aoMudar={v => setRespostas(atuais => ({ ...atuais, [p.id]: v }))}
                 />
               </label>
             </div>

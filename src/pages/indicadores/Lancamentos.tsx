@@ -182,7 +182,7 @@ export function Lancamentos() {
                         <span className="chip warn" style={{ marginLeft: 6 }} title="Calculado com uma versão anterior da fórmula">fórmula antiga</span>
                       )}
                     </td>
-                    <td className="muted">{l.fonte}</td>
+                    <td className="muted celula-fonte" title={l.fonte}>{l.fonte}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {podeEditar(l.unidade_id) && (
                         <>
