@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Check, Plus, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -98,13 +99,13 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
     <>
       <Dica id="ubs-restricoes">
         <b>Restrições</b> são limitações que afetam o trabalho da UBS (falta de sala, horário indefinido, equipe incompleta…).
-        <b> Pendências</b> são informações que ainda precisam ser levantadas. Marque <b>✓ Concluir</b> quando resolver.
+        <b> Pendências</b> são informações que ainda precisam ser levantadas. Marque <b>Concluir</b> quando resolver.
       </Dica>
       <Erro mensagem={erro || dadosQ.erro} />
 
       <Painel
         titulo="Restrições e gargalos registrados"
-        acoes={editavel && <button className="btn small primary" onClick={() => setRestricao({})}>+ Nova restrição</button>}
+        acoes={editavel && <button className="btn small primary" onClick={() => setRestricao({})}><Plus size={16} strokeWidth={1.8} /> Nova restrição</button>}
       >
         {dadosQ.carregando ? (
           <Carregando />
@@ -160,7 +161,7 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
             </label>
             {(editavel || ehGestor) && (
               <button className="btn small primary" onClick={() => setPendencia({ unidade_id: unidadeId, prioridade: 'Alta' })}>
-                + Nova pendência
+                <Plus size={16} strokeWidth={1.8} /> Nova pendência
               </button>
             )}
           </div>
@@ -181,7 +182,7 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
                   className="btn small"
                   onClick={() => executar(supabase.from('pendencias').update({ concluida: !p.concluida }).eq('id', p.id))}
                 >
-                  {p.concluida ? 'Reabrir' : '✓ Concluir'}
+                  {p.concluida ? <><RotateCcw size={14} strokeWidth={1.8} /> Reabrir</> : <><Check size={14} strokeWidth={2} /> Concluir</>}
                 </button>
                 <button className="btn small" onClick={() => setPendencia(p)}>Editar</button>
               </div>

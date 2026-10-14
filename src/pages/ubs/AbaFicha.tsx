@@ -1,4 +1,5 @@
 import type { CampoFicha, Unidade } from '../../lib/types';
+import { Pencil } from 'lucide-react';
 import { numeroBR } from '../../lib/util';
 import { BarraAba, Cartao, Dica, Painel } from '../../components/ui';
 import { mostrarValor, vazio } from '../../components/CampoDinamico';
@@ -31,7 +32,7 @@ export function AbaFicha({
       </Dica>
       <BarraAba
         texto={<>Ficha <b>{numeroBR(pct, 0)}%</b> preenchida</>}
-        acoes={editavel && <button className="btn primary" onClick={aoEditar}>✎ Editar ficha</button>}
+        acoes={editavel && <button className="btn primary" onClick={aoEditar}><Pencil size={16} strokeWidth={1.8} /> Editar ficha</button>}
       />
       <div className="progresso nao-imprimir" style={{ marginTop: -8, marginBottom: 20 }}>
         <div style={{ width: `${pct}%` }} />

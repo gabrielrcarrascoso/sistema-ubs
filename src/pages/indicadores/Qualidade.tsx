@@ -127,7 +127,7 @@ export function Qualidade() {
 
       <Painel titulo="Verificações encontradas">
         {achados.length === 0 ? (
-          <div className="info">Nenhum problema encontrado no período. 🎉</div>
+          <div className="info">Nenhum problema encontrado no período.</div>
         ) : (
           <div className="tablewrap">
             <table>

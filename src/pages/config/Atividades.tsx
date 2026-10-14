@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Atividade } from '../../lib/types';
@@ -49,7 +50,7 @@ export function Atividades() {
       <Painel titulo="Atividades da matriz">
         <form className="selectrow" style={{ marginBottom: 14 }} onSubmit={adicionar}>
           <input placeholder="Nome da nova atividade" value={nova} onChange={e => setNova(e.target.value)} style={{ minWidth: 260 }} />
-          <button className="btn primary">+ Adicionar</button>
+          <button className="btn primary"><Plus size={16} strokeWidth={1.8} /> Adicionar</button>
         </form>
         <div className="tablewrap">
           <table>
@@ -58,8 +59,8 @@ export function Atividades() {
                 <tr key={a.id}>
                   <td><b>{a.nome}</b></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir">↑</button>{' '}
-                    <button className="btn small" disabled={i === atividades.length - 1} onClick={() => mover(i, 1)} title="Descer">↓</button>{' '}
+                    <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>{' '}
+                    <button className="btn small" disabled={i === atividades.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>{' '}
                     <button
                       className="btn small"
                       onClick={() => {

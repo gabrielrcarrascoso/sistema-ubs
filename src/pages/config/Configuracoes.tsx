@@ -1,4 +1,5 @@
 import { BarraDeAbas, Cabecalho, useAba, type DefAba } from '../../components/ui';
+import { Download, FileText, Grid3x3, History, Users } from 'lucide-react';
 import { Usuarios } from './Usuarios';
 import { CamposFicha } from './CamposFicha';
 import { Atividades } from './Atividades';
@@ -6,11 +7,11 @@ import { Auditoria } from './Auditoria';
 import { Backup } from './Backup';
 
 const ABAS: DefAba[] = [
-  { id: 'usuarios', rotulo: '☺ Usuários' },
-  { id: 'ficha', rotulo: '📋 Ficha das UBS' },
-  { id: 'atividades', rotulo: '▦ Atividades da matriz' },
-  { id: 'historico', rotulo: '⟲ Histórico de alterações' },
-  { id: 'backup', rotulo: '⬇ Backup' },
+  { id: 'usuarios', rotulo: 'Usuários', icone: Users },
+  { id: 'ficha', rotulo: 'Ficha das UBS', icone: FileText },
+  { id: 'atividades', rotulo: 'Atividades da matriz', icone: Grid3x3 },
+  { id: 'historico', rotulo: 'Histórico de alterações', icone: History },
+  { id: 'backup', rotulo: 'Backup', icone: Download },
 ];
 
 /** Área do administrador geral */

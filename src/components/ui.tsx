@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { Lightbulb, type LucideIcon } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { Nivel, Unidade } from '../lib/types';
 import { CLASSE_NIVEL, NOME_NIVEL } from '../lib/util';
@@ -125,6 +126,7 @@ export function SeletorUnidade({
 export interface DefAba {
   id: string;
   rotulo: string;
+  icone?: LucideIcon;
   oculta?: boolean;
 }
 
@@ -148,6 +150,7 @@ export function BarraDeAbas({ abas, atual, aoMudar }: { abas: DefAba[]; atual: s
         .filter(a => !a.oculta)
         .map(a => (
           <button key={a.id} role="tab" aria-selected={a.id === atual} className={a.id === atual ? 'aba ativa' : 'aba'} onClick={() => aoMudar(a.id)}>
+            {a.icone && <a.icone size={16} strokeWidth={1.8} />}
             {a.rotulo}
           </button>
         ))}
@@ -186,7 +189,7 @@ export function Dica({ id, children }: { id: string; children: ReactNode }) {
   return (
     <div className={`dica ${aberta ? '' : 'fechada'} nao-imprimir`}>
       <button className="dica-titulo" onClick={alternar} aria-expanded={aberta}>
-        💡 Como usar esta tela <span>{aberta ? 'esconder' : 'mostrar'}</span>
+        <span className="dica-rotulo"><Lightbulb size={16} strokeWidth={1.8} /> Como usar esta tela</span> <span>{aberta ? 'esconder' : 'mostrar'}</span>
       </button>
       {aberta && <div className="dica-texto">{children}</div>}
     </div>

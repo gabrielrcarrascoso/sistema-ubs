@@ -208,7 +208,7 @@ td.num, th.num { text-align: right; }
 .atalho { display: block; padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); text-decoration: none; color: inherit; }
 .atalho:hover { border-color: var(--primary); }
 .atalho b { display: block; margin: 8px 0 4px; }
-.atalho span { font-size: 26px; }
+
 .atalho small { color: var(--muted); font-size: 12px; }
 .progresso { height: 8px; border-radius: 5px; background: #e8eef3; overflow: hidden; margin-top: 8px; }
 .progresso div { height: 100%; background: linear-gradient(90deg, #51c6b4, #167d79); }
@@ -224,3 +224,17 @@ td.num, th.num { text-align: right; }
   .cards { grid-template-columns: repeat(4, 1fr); }
 }
 .seletor-grande { font: inherit; font-weight: 750; font-size: 14px; padding: 9px 12px; border-radius: 9px; border: 2px solid var(--primary); background: white; color: var(--text); max-width: 100%; }
+
+/* ---------- Ícones (Lucide, traço fino e monocromático) ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn svg, .nav svg, .aba svg { flex-shrink: 0; }
+.nav { display: flex; align-items: center; gap: 11px; }
+.nav svg { opacity: .85; }
+.nav.active svg { opacity: 1; }
+.aba { display: inline-flex; align-items: center; gap: 7px; }
+.side-user button { display: inline-flex; align-items: center; gap: 5px; }
+.dica-rotulo { display: inline-flex; align-items: center; gap: 8px; }
+.atalho-icone { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 11px; background: #eaf5f3; color: var(--primary); }
+.tarefa .icone { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #f1f5f8; color: #48687f; flex-shrink: 0; }
+.tarefa.alta .icone { background: #fff3d9; color: #976013; }
+.tarefa .ir { display: inline-flex; align-items: center; gap: 2px; }

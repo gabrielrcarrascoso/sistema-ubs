@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Download, Plus } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Atividade, Competencia, Equipe, Nivel, Unidade } from '../../lib/types';
@@ -97,8 +98,8 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
         titulo={`Equipe · ${algumSemQtd ? 'há cargos sem quantidade' : `${soma} profissionais`}`}
         acoes={
           <div className="actions">
-            <button className="btn small" onClick={exportar}>↓ Exportar</button>
-            {editavel && <button className="btn small primary" onClick={() => setEditando({ cargo: '', quantidade: null })}>+ Adicionar cargo</button>}
+            <button className="btn small" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar</button>
+            {editavel && <button className="btn small primary" onClick={() => setEditando({ cargo: '', quantidade: null })}><Plus size={16} strokeWidth={1.8} /> Adicionar cargo</button>}
           </div>
         }
       >

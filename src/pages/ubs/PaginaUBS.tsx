@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Download, FileText, Flag, MapPin, Plus, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta, useUnidadeEscolhida } from '../../lib/hooks';
 import type { Unidade } from '../../lib/types';
@@ -13,10 +14,10 @@ import { AbaColetas } from './AbaColetas';
 import { ModalFicha } from './ModalFicha';
 
 const ABAS: DefAba[] = [
-  { id: 'ficha', rotulo: '📋 Ficha' },
-  { id: 'equipe', rotulo: '👥 Equipe e atividades' },
-  { id: 'restricoes', rotulo: '⚑ Restrições e pendências' },
-  { id: 'coletas', rotulo: '✎ Visitas de campo' },
+  { id: 'ficha', rotulo: 'Ficha', icone: FileText },
+  { id: 'equipe', rotulo: 'Equipe e atividades', icone: Users },
+  { id: 'restricoes', rotulo: 'Restrições e pendências', icone: Flag },
+  { id: 'coletas', rotulo: 'Visitas de campo', icone: MapPin },
 ];
 
 /** Tudo sobre uma UBS em um só lugar */
@@ -62,9 +63,9 @@ export function PaginaUBS() {
             >
               {unidades.map(x => <option key={x.id} value={x.id}>{x.nome}{x.id === perfil?.unidade_id ? ' (minha UBS)' : ''}</option>)}
             </select>
-            <button className="btn" onClick={() => window.print()} title="Imprimir ou salvar em PDF">🖨 Imprimir</button>
-            <button className="btn" onClick={exportarFichas} title="Planilha com a ficha de todas as UBS">↓ Fichas (Excel)</button>
-            {ehGestor && <button className="btn primary" onClick={() => setModal({ nome: '', dados_ficha: {} })}>+ Nova UBS</button>}
+            <button className="btn" onClick={() => window.print()} title="Imprimir ou salvar em PDF"><Printer size={16} strokeWidth={1.8} /> Imprimir</button>
+            <button className="btn" onClick={exportarFichas} title="Planilha com a ficha de todas as UBS"><Download size={16} strokeWidth={1.8} /> Fichas (Excel)</button>
+            {ehGestor && <button className="btn primary" onClick={() => setModal({ nome: '', dados_ficha: {} })}><Plus size={16} strokeWidth={1.8} /> Nova UBS</button>}
           </>
         }
       />

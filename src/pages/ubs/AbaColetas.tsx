@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Download } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -113,7 +114,7 @@ export function AbaColetas({ unidade }: { unidade: Unidade }) {
         atendimento, quantos profissionais podem fazê-la e quantas horas por semana cada um tem — o sistema calcula se a
         equipe dá conta. Cada visita fica guardada no histórico. <b>Não insira dados de pacientes.</b>
       </Dica>
-      <BarraAba acoes={<button className="btn" onClick={exportarTudo}>↓ Exportar coletas de todas as UBS</button>} />
+      <BarraAba acoes={<button className="btn" onClick={exportarTudo}><Download size={16} strokeWidth={1.8} /> Exportar coletas de todas as UBS</button>} />
       <Erro mensagem={erro || coletasQ.erro} />
       {aviso && <div className="info" style={{ marginBottom: 14 }}>{aviso}</div>}
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../../lib/indicadores';
@@ -56,7 +57,7 @@ export function PainelIndicadores() {
         Resumo dos indicadores. Escolha <b>uma UBS</b> ou veja <b>todas juntas</b>. Valores em <b>verde</b> atingiram a meta; em <b>vermelho</b>, não atingiram.
       </Dica>
       <BarraAba texto="Dados padronizados, fórmulas únicas e rastreabilidade — APS Data & Performance."
-        acoes={<Link to="/indicadores?aba=lancar" className="btn primary">+ Lançar dados</Link>}
+        acoes={<Link to="/indicadores?aba=lancar" className="btn primary"><Plus size={16} strokeWidth={1.8} /> Lançar dados</Link>}
       />
 
       <Painel titulo="Visão">

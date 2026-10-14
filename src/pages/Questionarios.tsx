@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -53,12 +54,12 @@ export function Questionarios() {
       <Cabecalho
         titulo="Questionários de campo"
         subtitulo="Pesquisas aplicadas nas UBS: o administrador geral monta, cada UBS responde e o sistema compara os resultados."
-        acoes={ehGestor && <button className="btn primary" onClick={() => setCriando({ titulo: '', descricao: '' })}>+ Novo questionário</button>}
+        acoes={ehGestor && <button className="btn primary" onClick={() => setCriando({ titulo: '', descricao: '' })}><Plus size={16} strokeWidth={1.8} /> Novo questionário</button>}
       />
       <Dica id="questionarios">
         {ehGestor ? (
           <ol>
-            <li>Clique em <b>+ Novo questionário</b> e adicione as perguntas.</li>
+            <li>Clique em <b><Plus size={16} strokeWidth={1.8} /> Novo questionário</b> e adicione as perguntas.</li>
             <li>Clique em <b>Abrir para respostas</b> — só então as UBS conseguem ver e responder.</li>
             <li>Acompanhe em <b>Resultados</b> quem já respondeu e compare as respostas. Ao final, <b>Encerre</b>.</li>
           </ol>

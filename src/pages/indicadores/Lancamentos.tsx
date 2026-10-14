@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Download, Plus, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
@@ -122,16 +123,16 @@ export function Lancamentos() {
   return (
     <>
       <Dica id="ind-lancar">
-        Todo mês, registre os números de cada indicador por UBS (tirados do e-SUS/PEC). Use <b>+ Novo lançamento</b> para um número, ou <b>Importar planilha</b> para vários de uma vez. O sistema calcula o resultado sozinho.
+        Todo mês, registre os números de cada indicador por UBS (tirados do e-SUS/PEC). Use <b><Plus size={16} strokeWidth={1.8} /> Novo lançamento</b> para um número, ou <b>Importar planilha</b> para vários de uma vez. O sistema calcula o resultado sozinho.
       </Dica>
       <BarraAba texto="Registro mensal dos dados de cada unidade, com fonte e versão da fórmula."
         acoes={
           <>
-            <button className="btn" onClick={exportar}>↓ Exportar CSV</button>
+            <button className="btn" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar CSV</button>
             {unidadesEditaveis.length > 0 && (
               <>
-                <button className="btn" onClick={() => setImportando(true)}>⇪ Importar planilha</button>
-                <button className="btn primary" onClick={novo} disabled={indicadores.length === 0}>+ Novo lançamento</button>
+                <button className="btn" onClick={() => setImportando(true)}><Upload size={16} strokeWidth={1.8} /> Importar planilha</button>
+                <button className="btn primary" onClick={novo} disabled={indicadores.length === 0}><Plus size={16} strokeWidth={1.8} /> Novo lançamento</button>
               </>
             )}
           </>
@@ -421,12 +422,12 @@ function ImportarPlanilha({
   return (
     <Modal titulo="Importar planilha de indicadores" aoFechar={aoFechar}>
       <p className="muted">
-        Envie um arquivo <b>CSV</b> (Excel → Salvar como → CSV) com as colunas{' '}
+        Envie um arquivo <b>CSV</b> (no Excel, use “Salvar como” e escolha CSV) com as colunas{' '}
         <code>codigo; unidade; competencia; numerador; denominador; fonte; observacao</code>. Lançamentos já existentes
         para o mesmo indicador, unidade e mês serão <b>atualizados</b>. Somente dados agregados — nunca dados de pacientes.
       </p>
       <div className="actions" style={{ justifyContent: 'flex-start', marginTop: 12 }}>
-        <button className="btn" onClick={baixarModelo}>↓ Baixar modelo</button>
+        <button className="btn" onClick={baixarModelo}><Download size={16} strokeWidth={1.8} /> Baixar modelo</button>
         <input type="file" accept=".csv,text/csv" onChange={e => aoEscolherArquivo(e.target.files?.[0])} />
       </div>
       <div style={{ marginTop: 14 }}>

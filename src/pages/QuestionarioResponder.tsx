@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -61,7 +62,7 @@ export function QuestionarioResponder() {
   if (q.status !== 'aberto') {
     return (
       <>
-        <Cabecalho titulo={q.titulo} subtitulo="Este questionário não está aberto para respostas." acoes={<Link className="btn" to="/questionarios">← Voltar</Link>} />
+        <Cabecalho titulo={q.titulo} subtitulo="Este questionário não está aberto para respostas." acoes={<Link className="btn" to="/questionarios"><ArrowLeft size={16} strokeWidth={1.8} /> Voltar</Link>} />
         <div className="alert">Só é possível responder ou alterar respostas enquanto o questionário estiver aberto.</div>
       </>
     );
@@ -99,7 +100,7 @@ export function QuestionarioResponder() {
       <Cabecalho
         titulo={q.titulo}
         subtitulo={q.descricao || 'Preencha as respostas desta UBS.'}
-        acoes={<Link className="btn" to="/questionarios">← Voltar</Link>}
+        acoes={<Link className="btn" to="/questionarios"><ArrowLeft size={16} strokeWidth={1.8} /> Voltar</Link>}
       />
 
       <form onSubmit={salvar}>

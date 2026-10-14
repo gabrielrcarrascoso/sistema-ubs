@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowLeft, Download, Plus, Printer } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -62,10 +63,10 @@ export function QuestionarioResultados() {
         subtitulo="Consolidação das respostas das UBS."
         acoes={
           <>
-            <Link className="btn" to="/questionarios">← Voltar</Link>
-            <button className="btn" onClick={() => window.print()}>🖨 Imprimir</button>
-            <button className="btn" onClick={exportar} disabled={!aplicacoes.length}>↓ Exportar respostas (CSV)</button>
-            {q.status === 'aberto' && <Link className="btn primary" to={`/questionarios/${q.id}/responder`}>+ Responder</Link>}
+            <Link className="btn" to="/questionarios"><ArrowLeft size={16} strokeWidth={1.8} /> Voltar</Link>
+            <button className="btn" onClick={() => window.print()}><Printer size={16} strokeWidth={1.8} /> Imprimir</button>
+            <button className="btn" onClick={exportar} disabled={!aplicacoes.length}><Download size={16} strokeWidth={1.8} /> Exportar respostas (CSV)</button>
+            {q.status === 'aberto' && <Link className="btn primary" to={`/questionarios/${q.id}/responder`}><Plus size={16} strokeWidth={1.8} /> Responder</Link>}
           </>
         }
       />

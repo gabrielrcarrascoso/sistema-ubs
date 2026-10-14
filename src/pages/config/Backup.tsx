@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Download } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { baixarArquivo } from '../../lib/util';
 import { BarraAba, Dica, Erro, Painel } from '../../components/ui';
@@ -56,7 +57,7 @@ export function Backup() {
       <Erro mensagem={erro} />
       <Painel titulo="Backup completo">
         <button className="btn primary" onClick={gerar} disabled={!!progresso}>
-          {progresso ?? '⬇ Baixar backup agora'}
+          {progresso ?? <><Download size={16} strokeWidth={1.8} /> Baixar backup agora</>}
         </button>
         {resumo && (
           <div className="info" style={{ marginTop: 16 }}>

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { BarChart3, ChevronRight, CircleCheck, ClipboardList, FileText, Flag, Hospital, Hourglass, MapPin, PenLine, Settings, User, UserCheck, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
@@ -10,7 +11,7 @@ import { buscarCamposFicha } from './config/CamposFicha';
 import { preenchimentoFicha } from './ubs/AbaFicha';
 
 interface Tarefa {
-  icone: string;
+  icone: LucideIcon;
   titulo: string;
   detalhe: string;
   link: string;
@@ -58,60 +59,60 @@ export function Inicio() {
 
   if (ehGestor) {
     if (aguardando > 0)
-      tarefas.push({ icone: '☺', titulo: `${aguardando} pessoa(s) aguardando aprovação`, detalhe: 'Aprove e defina o papel de cada uma.', link: '/configuracoes?aba=usuarios', alta: true });
+      tarefas.push({ icone: UserCheck, titulo: `${aguardando} pessoa(s) aguardando aprovação`, detalhe: 'Aprove e defina o papel de cada uma.', link: '/configuracoes?aba=usuarios', alta: true });
     for (const q of questionarios.filter(x => x.status === 'rascunho'))
-      tarefas.push({ icone: '✍', titulo: `Questionário em rascunho: “${q.titulo}”`, detalhe: 'Revise as perguntas e abra para as UBS responderem.', link: `/questionarios/${q.id}/editar` });
+      tarefas.push({ icone: PenLine, titulo: `Questionário em rascunho: “${q.titulo}”`, detalhe: 'Revise as perguntas e abra para as UBS responderem.', link: `/questionarios/${q.id}/editar` });
     for (const q of abertos) {
       const faltam = unidades.filter(u => !aplicacoes.some(a => a.questionario_id === q.id && a.unidade_id === u.id));
       if (faltam.length)
-        tarefas.push({ icone: '⏳', titulo: `“${q.titulo}”: ${faltam.length} UBS ainda não responderam`, detalhe: faltam.map(u => u.nome).join(', '), link: `/questionarios/${q.id}/resultados` });
+        tarefas.push({ icone: Hourglass, titulo: `“${q.titulo}”: ${faltam.length} UBS ainda não responderam`, detalhe: faltam.map(u => u.nome).join(', '), link: `/questionarios/${q.id}/resultados` });
     }
     const semLancamento = unidades.filter(u => lancadosNoMes(u.id) < indicadores.length);
     if (indicadores.length && semLancamento.length)
-      tarefas.push({ icone: '📊', titulo: `Indicadores de ${mesAno(mesPassado)} incompletos em ${semLancamento.length} UBS`, detalhe: semLancamento.map(u => u.nome).join(', '), link: '/indicadores?aba=qualidade' });
+      tarefas.push({ icone: BarChart3, titulo: `Indicadores de ${mesAno(mesPassado)} incompletos em ${semLancamento.length} UBS`, detalhe: semLancamento.map(u => u.nome).join(', '), link: '/indicadores?aba=qualidade' });
     const incompletas = unidades.filter(u => preenchimentoFicha(u, campos) < 100);
     if (incompletas.length)
-      tarefas.push({ icone: '📋', titulo: `${incompletas.length} UBS com ficha incompleta`, detalhe: incompletas.map(u => `${u.nome} (${numeroBR(preenchimentoFicha(u, campos), 0)}%)`).join(', '), link: '/ubs', unidadeId: incompletas[0].id });
+      tarefas.push({ icone: FileText, titulo: `${incompletas.length} UBS com ficha incompleta`, detalhe: incompletas.map(u => `${u.nome} (${numeroBR(preenchimentoFicha(u, campos), 0)}%)`).join(', '), link: '/ubs', unidadeId: incompletas[0].id });
     const altas = pendencias.filter(p => p.prioridade === 'Alta');
     if (altas.length)
-      tarefas.push({ icone: '⚑', titulo: `${altas.length} pendência(s) de prioridade alta`, detalhe: altas.slice(0, 3).map(p => p.texto).join(' · '), link: '/ubs?aba=restricoes' });
+      tarefas.push({ icone: Flag, titulo: `${altas.length} pendência(s) de prioridade alta`, detalhe: altas.slice(0, 3).map(p => p.texto).join(' · '), link: '/ubs?aba=restricoes' });
   }
 
   if (minhaUBS) {
     for (const q of abertos.filter(q => !aplicacoes.some(a => a.questionario_id === q.id && a.unidade_id === minhaUBS.id)))
-      tarefas.push({ icone: '✍', titulo: `Responder o questionário “${q.titulo}”`, detalhe: 'Sua UBS ainda não respondeu.', link: `/questionarios/${q.id}/responder`, alta: true });
+      tarefas.push({ icone: ClipboardList, titulo: `Responder o questionário “${q.titulo}”`, detalhe: 'Sua UBS ainda não respondeu.', link: `/questionarios/${q.id}/responder`, alta: true });
     const faltam = indicadores.length - lancadosNoMes(minhaUBS.id);
     if (faltam > 0)
-      tarefas.push({ icone: '📊', titulo: `Lançar ${faltam} indicador(es) de ${mesAno(mesPassado)}`, detalhe: 'Números do mês passado tirados do e-SUS/PEC.', link: '/indicadores?aba=lancar', alta: true });
+      tarefas.push({ icone: BarChart3, titulo: `Lançar ${faltam} indicador(es) de ${mesAno(mesPassado)}`, detalhe: 'Números do mês passado tirados do e-SUS/PEC.', link: '/indicadores?aba=lancar', alta: true });
     const pct = preenchimentoFicha(minhaUBS, campos);
     if (pct < 100)
-      tarefas.push({ icone: '📋', titulo: `Completar a ficha da UBS (${numeroBR(pct, 0)}% preenchida)`, detalhe: 'Mantenha as informações da sua unidade atualizadas.', link: '/ubs', unidadeId: minhaUBS.id });
+      tarefas.push({ icone: FileText, titulo: `Completar a ficha da UBS (${numeroBR(pct, 0)}% preenchida)`, detalhe: 'Mantenha as informações da sua unidade atualizadas.', link: '/ubs', unidadeId: minhaUBS.id });
     const minhas = pendencias.filter(p => p.unidade_id === minhaUBS.id);
     if (minhas.length)
-      tarefas.push({ icone: '⚑', titulo: `${minhas.length} pendência(s) da sua UBS em aberto`, detalhe: minhas.slice(0, 3).map(p => p.texto).join(' · '), link: '/ubs?aba=restricoes', unidadeId: minhaUBS.id });
+      tarefas.push({ icone: Flag, titulo: `${minhas.length} pendência(s) da sua UBS em aberto`, detalhe: minhas.slice(0, 3).map(p => p.texto).join(' · '), link: '/ubs?aba=restricoes', unidadeId: minhaUBS.id });
   }
 
   tarefas.sort((a, b) => Number(!!b.alta) - Number(!!a.alta));
 
   const atalhos = ehGestor
     ? [
-        { icone: '🏥', titulo: 'UBS', texto: 'Fichas, equipes e restrições', link: '/ubs' },
-        { icone: '✍', titulo: 'Questionários', texto: 'Criar e ver resultados', link: '/questionarios' },
-        { icone: '📊', titulo: 'Indicadores', texto: 'Painel e qualidade', link: '/indicadores' },
-        { icone: '⚙', titulo: 'Configurações', texto: 'Usuários, ficha e backup', link: '/configuracoes' },
+        { icone: Hospital, titulo: 'UBS', texto: 'Fichas, equipes e restrições', link: '/ubs' },
+        { icone: ClipboardList, titulo: 'Questionários', texto: 'Criar e ver resultados', link: '/questionarios' },
+        { icone: BarChart3, titulo: 'Indicadores', texto: 'Painel e qualidade', link: '/indicadores' },
+        { icone: Settings, titulo: 'Configurações', texto: 'Usuários, ficha e backup', link: '/configuracoes' },
       ]
     : minhaUBS
       ? [
-          { icone: '🏥', titulo: 'Minha UBS', texto: minhaUBS.nome, link: '/ubs' },
-          { icone: '✍', titulo: 'Questionários', texto: 'Responder pesquisas', link: '/questionarios' },
-          { icone: '📊', titulo: 'Lançar indicadores', texto: 'Números do mês', link: '/indicadores?aba=lancar' },
-          { icone: '✎', titulo: 'Visita de campo', texto: 'Registrar coleta', link: '/ubs?aba=coletas' },
+          { icone: Hospital, titulo: 'Minha UBS', texto: minhaUBS.nome, link: '/ubs' },
+          { icone: ClipboardList, titulo: 'Questionários', texto: 'Responder pesquisas', link: '/questionarios' },
+          { icone: BarChart3, titulo: 'Lançar indicadores', texto: 'Números do mês', link: '/indicadores?aba=lancar' },
+          { icone: MapPin, titulo: 'Visita de campo', texto: 'Registrar coleta', link: '/ubs?aba=coletas' },
         ]
       : [
-          { icone: '🏥', titulo: 'UBS', texto: 'Consultar unidades', link: '/ubs' },
-          { icone: '📊', titulo: 'Indicadores', texto: 'Painel', link: '/indicadores' },
-          { icone: '✍', titulo: 'Questionários', texto: 'Pesquisas', link: '/questionarios' },
-          { icone: '👤', titulo: 'Meu perfil', texto: 'Nome e senha', link: '/perfil' },
+          { icone: Hospital, titulo: 'UBS', texto: 'Consultar unidades', link: '/ubs' },
+          { icone: BarChart3, titulo: 'Indicadores', texto: 'Painel', link: '/indicadores' },
+          { icone: ClipboardList, titulo: 'Questionários', texto: 'Pesquisas', link: '/questionarios' },
+          { icone: User, titulo: 'Meu perfil', texto: 'Nome e senha', link: '/perfil' },
         ];
 
   return (
@@ -124,7 +125,7 @@ export function Inicio() {
       <div className="atalhos" style={{ marginBottom: 20 }}>
         {atalhos.map(a => (
           <Link key={a.titulo} to={a.link} className="atalho" onClick={() => lembrarUnidade(minhaUBS?.id)}>
-            <span>{a.icone}</span>
+            <span className="atalho-icone"><a.icone size={22} strokeWidth={1.6} /></span>
             <b>{a.titulo}</b>
             <small>{a.texto}</small>
           </Link>
@@ -133,7 +134,7 @@ export function Inicio() {
 
       <Painel titulo="O que fazer agora">
         {tarefas.length === 0 ? (
-          <div className="info">✓ Tudo em dia! Nenhuma tarefa pendente para você.</div>
+          <div className="info"><CircleCheck size={16} strokeWidth={1.8} style={{ verticalAlign: '-3px' }} /> Tudo em dia! Nenhuma tarefa pendente para você.</div>
         ) : (
           <div className="tarefas">
             {tarefas.map((t, i) => (
@@ -146,12 +147,12 @@ export function Inicio() {
                   navegar(t.link);
                 }}
               >
-                <span className="icone">{t.icone}</span>
+                <span className="icone"><t.icone size={20} strokeWidth={1.7} /></span>
                 <span className="texto">
                   <b>{t.titulo}</b>
                   <small>{t.detalhe}</small>
                 </span>
-                <span className="ir">Resolver →</span>
+                <span className="ir">Resolver <ChevronRight size={15} strokeWidth={2} /></span>
               </button>
             ))}
           </div>

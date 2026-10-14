@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Download, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { useConsulta } from '../../lib/hooks';
@@ -85,8 +86,8 @@ export function Dicionario() {
       <BarraAba texto="Nome, definição, fórmula, fonte e meta de cada indicador — a mesma regra para todas as unidades."
         acoes={
           <>
-            <button className="btn" onClick={exportar}>↓ Exportar dicionário</button>
-            {ehGestor && <button className="btn primary" onClick={() => setEditando(NOVO)}>+ Novo indicador</button>}
+            <button className="btn" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar dicionário</button>
+            {ehGestor && <button className="btn primary" onClick={() => setEditando(NOVO)}><Plus size={16} strokeWidth={1.8} /> Novo indicador</button>}
           </>
         }
       />

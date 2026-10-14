@@ -1,4 +1,5 @@
 import { useAuth } from '../../auth/AuthProvider';
+import { BarChart3, BookOpen, Plus, ShieldCheck } from 'lucide-react';
 import { BarraDeAbas, Cabecalho, useAba, type DefAba } from '../../components/ui';
 import { PainelIndicadores } from './PainelIndicadores';
 import { Lancamentos } from './Lancamentos';
@@ -10,10 +11,10 @@ export function PaginaIndicadores() {
   const { perfil } = useAuth();
   const podeLancar = perfil?.papel !== 'profissional';
   const abas: DefAba[] = [
-    { id: 'painel', rotulo: '📊 Painel' },
-    { id: 'lancar', rotulo: '＋ Lançar dados', oculta: !podeLancar },
-    { id: 'qualidade', rotulo: '✓ Qualidade dos dados' },
-    { id: 'definicoes', rotulo: '☰ Definições' },
+    { id: 'painel', rotulo: 'Painel', icone: BarChart3 },
+    { id: 'lancar', rotulo: 'Lançar dados', icone: Plus, oculta: !podeLancar },
+    { id: 'qualidade', rotulo: 'Qualidade dos dados', icone: ShieldCheck },
+    { id: 'definicoes', rotulo: 'Definições', icone: BookOpen },
   ];
   const [aba, setAba] = useAba(abas, 'painel');
 

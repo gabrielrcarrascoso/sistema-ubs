@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, traduzErro } from '../lib/supabase';
 import { ok, useConsulta } from '../lib/hooks';
@@ -95,7 +96,7 @@ export function QuestionarioEditar() {
         subtitulo={q.descricao || 'Monte as perguntas e depois abra o questionário para as UBS.'}
         acoes={
           <>
-            <Link className="btn" to="/questionarios">← Voltar</Link>
+            <Link className="btn" to="/questionarios"><ArrowLeft size={16} strokeWidth={1.8} /> Voltar</Link>
             <Link className="btn" to={`/questionarios/${q.id}/resultados`}>Resultados</Link>
           </>
         }
@@ -118,7 +119,7 @@ export function QuestionarioEditar() {
         )}
       </Painel>
 
-      <Painel titulo={`Perguntas (${perguntas.length})`} acoes={<button className="btn small primary" onClick={() => setEditando({ tipo: 'texto' })}>+ Adicionar pergunta</button>}>
+      <Painel titulo={`Perguntas (${perguntas.length})`} acoes={<button className="btn small primary" onClick={() => setEditando({ tipo: 'texto' })}><Plus size={16} strokeWidth={1.8} /> Adicionar pergunta</button>}>
         {perguntas.length === 0 && <p className="empty">Nenhuma pergunta ainda.</p>}
         {perguntas.map((p, i) => (
           <div className="pergunta" key={p.id}>
@@ -134,8 +135,8 @@ export function QuestionarioEditar() {
                 </div>
               </div>
               <div className="actions" style={{ flexShrink: 0 }}>
-                <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir">↑</button>
-                <button className="btn small" disabled={i === perguntas.length - 1} onClick={() => mover(i, 1)} title="Descer">↓</button>
+                <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>
+                <button className="btn small" disabled={i === perguntas.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>
                 <button className="btn small" onClick={() => setEditando({ ...p, opcoesTexto: p.opcoes.join('\n') })}>Editar</button>
                 <button className="btn small danger" onClick={() => confirm('Remover esta pergunta? Respostas já dadas a ela deixam de aparecer.') && executar(supabase.from('perguntas').delete().eq('id', p.id))}>
                   Remover
