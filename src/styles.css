@@ -447,3 +447,4 @@ td.num, th.num { text-align: right; }
 .historico-ponto.criacao { background: #2a9d8f; }
 .historico-ponto.remocao { background: #d0544e; }
 .historico-texto { font-size: 13.5px; line-height: 1.45; }
+.barra-aba.so-acoes { justify-content: flex-end; }

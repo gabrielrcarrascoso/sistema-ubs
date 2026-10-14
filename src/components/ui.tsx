@@ -200,8 +200,8 @@ export function BarraDeAbas({ abas, atual, aoMudar }: { abas: DefAba[]; atual: s
 /** Linha com explicação curta + botões, usada no topo de cada aba */
 export function BarraAba({ texto, acoes }: { texto?: ReactNode; acoes?: ReactNode }) {
   return (
-    <div className="barra-aba">
-      <p>{texto}</p>
+    <div className={`barra-aba ${texto ? '' : 'so-acoes'}`}>
+      {texto && <p>{texto}</p>}
       {acoes && <div className="actions">{acoes}</div>}
     </div>
   );
