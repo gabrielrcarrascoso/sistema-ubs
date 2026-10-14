@@ -1,5 +1,7 @@
 # Sistema UBS · Salgueiro/PE
 
+**Acesse:** https://sistema-ubs.vercel.app
+
 Sistema web de apoio à gestão das Unidades Básicas de Saúde (UBS), unindo duas propostas:
 
 - **Designação (Célula 3):** unidades e equipes, matriz profissional × atividade, restrições operacionais,
@@ -39,7 +41,7 @@ têm botão **🖨 Imprimir** (também serve para salvar em PDF).
 | Banco de dados | Supabase (PostgreSQL) | Guarda todos os dados |
 | Login e senha | Supabase Auth | Cadastro, login, recuperação de senha |
 | Permissões | Row Level Security (RLS) | O **banco** decide quem pode ver/editar cada linha |
-| Hospedagem | GitHub Pages | Site publicado com HTTPS |
+| Hospedagem | Vercel (plano Hobby) | Site publicado com HTTPS, atualizado a cada `git push` |
 
 ## Papéis de usuário
 
@@ -114,8 +116,8 @@ Abra o endereço que aparecer (ex.: http://localhost:5173).
 1. Crie uma conta em [supabase.com](https://supabase.com) e um projeto (plano **Free**, região **São Paulo**).
 2. **Instalar o banco:** abra *SQL Editor → New query*, cole todo o conteúdo de `supabase/instalar_banco.sql` e clique em **Run**.
 3. **Endereço do site:** em *Authentication → URL Configuration*:
-   - **Site URL:** o endereço do GitHub Pages (ex.: `https://SEU-USUARIO.github.io/sistema-ubs/`)
-   - **Redirect URLs:** adicione o mesmo endereço e `http://localhost:5173/`
+   - **Site URL:** `https://sistema-ubs.vercel.app/`
+   - **Redirect URLs:** `https://sistema-ubs.vercel.app/**` e `http://localhost:5173/**`
 4. **E-mails:** o e-mail gratuito padrão do Supabase só envia para membros da sua equipe no Supabase e tem limite por hora.
    - Para uso em turma/piloto: em *Authentication → Sign In / Providers → Email*, **desative "Confirm email"**
      (a aprovação pelo gestor já controla quem entra).
@@ -129,7 +131,13 @@ Abra o endereço que aparecer (ex.: http://localhost:5173).
 >
 > 💾 **Backup:** o plano gratuito não tem backup automático. Use *Configurações → Backup* uma vez por mês.
 
-## Publicação no GitHub Pages
+## Publicação
+
+O site principal fica na **Vercel** (conta pessoal, plano Hobby gratuito), ligada a este repositório:
+cada `git push` na `main` publica uma nova versão em https://sistema-ubs.vercel.app automaticamente.
+Não é preciso configurar variáveis: os dados públicos de conexão estão em `.env.production`.
+
+### Alternativa: GitHub Pages
 
 1. Envie o código para um repositório no GitHub (branch `main`).
 2. No repositório: *Settings → Pages → Source:* **GitHub Actions**.
