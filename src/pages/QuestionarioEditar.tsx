@@ -99,7 +99,7 @@ export function QuestionarioEditar() {
         acoes={
           <>
             <Link className="btn" to="/questionarios"><ArrowLeft size={16} strokeWidth={1.8} /> Voltar</Link>
-            <Link className="btn" to={`/questionarios/${q.id}/resultados`}>Resultados</Link>
+            {q.status !== 'rascunho' && <Link className="btn" to={`/questionarios/${q.id}/resultados`}>Resultados</Link>}
           </>
         }
       />
@@ -179,8 +179,8 @@ export function QuestionarioEditar() {
               <span className="label" style={{ fontSize: 14, color: 'var(--text)' }}>
                 <span className="num">{i + 1}.</span>{p.enunciado}{p.obrigatoria && <span style={{ color: 'var(--danger)' }}> *</span>}
               </span>
-              {p.ajuda && <span className="hint">{p.ajuda}</span>}
-              <div style={{ marginTop: 6 }}>
+              <div className="field" style={{ marginTop: 6 }}>
+                {p.ajuda && <span className="hint" style={{ marginTop: 0, marginBottom: 6 }}>{p.ajuda}</span>}
                 <CampoDinamico id={`previa-${p.id}`} tipo={p.tipo} opcoes={p.opcoes} valor={respostasPrevia[p.id]} aoMudar={v => setRespostasPrevia({ ...respostasPrevia, [p.id]: v })} />
               </div>
             </div>
