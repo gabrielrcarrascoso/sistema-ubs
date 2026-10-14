@@ -57,7 +57,7 @@ export function MeuPerfil() {
             </div>
             <div className="actions" style={{ marginTop: 14 }}><button className="btn primary">Salvar nome</button></div>
           </form>
-          <p className="muted" style={{ marginTop: 12 }}>Papel e unidade só podem ser alterados por um gestor.</p>
+          <p className="muted" style={{ marginTop: 12 }}>Papel e unidade só podem ser alterados pelo administrador geral.</p>
         </Painel>
 
         <Painel titulo="Trocar senha">

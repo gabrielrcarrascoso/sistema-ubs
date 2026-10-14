@@ -3,8 +3,10 @@ import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
 import { buscarUnidades, ok, useConsulta, useUnidadeEscolhida } from '../lib/hooks';
 import type { Equipe, Unidade } from '../lib/types';
-import { numOuNull } from '../lib/util';
+import { baixarCSV, numOuNull } from '../lib/util';
 import { Cabecalho, Campo, Carregando, Cartao, Erro, Modal, Painel, SeletorUnidade } from '../components/ui';
+import { CampoDinamico, mostrarValor, vazio } from '../components/CampoDinamico';
+import { agruparPorSecao, buscarCamposFicha } from './CamposFicha';
 
 type EquipeEditavel = Partial<Equipe>;
 type UnidadeEditavel = Partial<Unidade>;
@@ -12,6 +14,11 @@ type UnidadeEditavel = Partial<Unidade>;
 export function Unidades() {
   const { perfil, podeEditar, ehGestor } = useAuth();
   const unidadesQ = useConsulta(buscarUnidades, []);
+  const camposQ = useConsulta(() => buscarCamposFicha(true), []);
+  const inativasQ = useConsulta(
+    async () => (ehGestor ? ok<Unidade[]>(await supabase.from('unidades').select('*').eq('ativa', false).order('nome')) : []),
+    [ehGestor],
+  );
   const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
   const equipesQ = useConsulta(
     async () =>
@@ -25,8 +32,9 @@ export function Unidades() {
   const [editandoUnidade, setEditandoUnidade] = useState<UnidadeEditavel | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  if (unidadesQ.carregando) return <Carregando />;
+  if (unidadesQ.carregando || camposQ.carregando) return <Carregando />;
   const unidades = unidadesQ.dados ?? [];
+  const campos = camposQ.dados ?? [];
   const u = unidades.find(x => x.id === unidadeId);
   const equipes = equipesQ.dados ?? [];
   const editavel = podeEditar(unidadeId);
@@ -65,7 +73,11 @@ export function Unidades() {
     if (!editandoUnidade) return;
     setErro(null);
     const nome = editandoUnidade.nome?.trim() ?? '';
+    const ficha = editandoUnidade.dados_ficha ?? {};
+    const faltando = campos.filter(c => c.obrigatorio && vazio(ficha[c.id])).map(c => c.nome);
+    if (faltando.length) return setErro(`Preencha os campos obrigatórios: ${faltando.join(', ')}.`);
     const registro = {
+      dados_ficha: ficha,
       nome,
       horario: editandoUnidade.horario || null,
       volume_estimado: editandoUnidade.volume_estimado || null,
@@ -86,20 +98,48 @@ export function Unidades() {
     unidadesQ.recarregar();
   }
 
+  async function alterarAtiva(alvo: Unidade, ativa: boolean) {
+    const msg = ativa
+      ? `Reativar "${alvo.nome}"?`
+      : `Desativar "${alvo.nome}"?\n\nA UBS some das telas, mas todos os dados ficam guardados e ela pode ser reativada depois.`;
+    if (!confirm(msg)) return;
+    const { error } = await supabase.from('unidades').update({ ativa }).eq('id', alvo.id);
+    if (error) return setErro(traduzErro(error));
+    setEditandoUnidade(null);
+    unidadesQ.recarregar();
+    inativasQ.recarregar();
+  }
+
+  function exportarFichas() {
+    baixarCSV(
+      [
+        ['UBS', 'Horário', 'Profissionais declarados', 'Volume estimado', 'Pico', 'Observação', ...campos.map(c => c.nome)],
+        ...unidades.map(x => [
+          x.nome, x.horario, x.profissionais_declarados, x.volume_estimado, x.pico, x.observacao,
+          ...campos.map(c => (vazio(x.dados_ficha?.[c.id]) ? '' : mostrarValor(c.tipo, x.dados_ficha[c.id]))),
+        ]),
+      ],
+      'fichas_ubs.csv',
+    );
+  }
+
   return (
     <>
       <Cabecalho
         titulo="Unidades e equipes"
         subtitulo="Caracterização dos profissionais e da operação por unidade."
         acoes={
-          ehGestor && (
-            <button className="btn primary" onClick={() => setEditandoUnidade({ nome: '' })}>
-              + Nova unidade
-            </button>
-          )
+          <>
+            <button className="btn" onClick={exportarFichas}>↓ Exportar fichas (CSV)</button>
+            {ehGestor && (
+              <button className="btn primary" onClick={() => setEditandoUnidade({ nome: '', dados_ficha: {} })}>
+                + Nova UBS
+              </button>
+            )}
+          </>
         }
       />
-      <Erro mensagem={erro || unidadesQ.erro || equipesQ.erro} />
+      <Erro mensagem={(!editandoUnidade && erro) || unidadesQ.erro || equipesQ.erro || camposQ.erro} />
 
       <Painel titulo="Selecione a UBS">
         <div className="selectrow">
@@ -107,7 +147,7 @@ export function Unidades() {
           {u && <span className="chip neutral">{u.profissionais_declarados ?? '—'} profissionais declarados</span>}
           {editavel && u && (
             <button className="btn small" onClick={() => setEditandoUnidade(u)}>
-              Editar dados da unidade
+              Editar ficha da UBS
             </button>
           )}
         </div>
@@ -131,6 +171,26 @@ export function Unidades() {
               Divergência: {u.profissionais_declarados} profissionais declarados, mas {somaCargos} discriminados por cargo.
             </div>
           )}
+
+          <Painel
+            titulo="Ficha da UBS"
+            acoes={editavel && <button className="btn small primary" onClick={() => setEditandoUnidade(u)}>Editar ficha</button>}
+          >
+            {campos.length === 0 && <p className="empty">Nenhum campo definido. O administrador geral define os campos em “Campos da ficha”.</p>}
+            {agruparPorSecao(campos).map(([secao, lista]) => (
+              <div className="ficha-secao" key={secao}>
+                <h3>{secao}</h3>
+                <div className="ficha-grid">
+                  {lista.map(c => (
+                    <div className="ficha-item" key={c.id}>
+                      <span>{c.nome}</span>
+                      {vazio(u.dados_ficha?.[c.id]) ? <em className="muted">não informado</em> : mostrarValor(c.tipo, u.dados_ficha[c.id])}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Painel>
 
           <Painel
             titulo="Equipe por categoria"
@@ -193,6 +253,17 @@ export function Unidades() {
         </>
       )}
 
+      {ehGestor && (inativasQ.dados?.length ?? 0) > 0 && (
+        <Painel titulo="UBS desativadas">
+          {inativasQ.dados!.map(x => (
+            <div className="item row-flex" key={x.id}>
+              <b>{x.nome}</b>
+              <button className="btn small" onClick={() => alterarAtiva(x, true)}>Reativar</button>
+            </div>
+          ))}
+        </Painel>
+      )}
+
       {editandoEquipe && (
         <Modal titulo={editandoEquipe.id ? 'Editar cargo' : 'Adicionar cargo'} aoFechar={() => setEditandoEquipe(null)}>
           <form onSubmit={salvarEquipe}>
@@ -224,8 +295,10 @@ export function Unidades() {
       )}
 
       {editandoUnidade && (
-        <Modal titulo={editandoUnidade.id ? 'Editar unidade' : 'Nova unidade'} aoFechar={() => setEditandoUnidade(null)}>
+        <Modal titulo={editandoUnidade.id ? `Ficha · ${editandoUnidade.nome}` : 'Nova UBS'} aoFechar={() => setEditandoUnidade(null)}>
           <form onSubmit={salvarUnidade}>
+            <Erro mensagem={erro} />
+            <div className="ficha-secao"><h3>Dados gerais</h3></div>
             <div className="form-grid cols-2">
               <Campo rotulo="Nome da unidade / turno" className="full">
                 <input required value={editandoUnidade.nome ?? ''} onChange={e => setEditandoUnidade({ ...editandoUnidade, nome: e.target.value })} />
@@ -251,7 +324,35 @@ export function Unidades() {
                 <textarea value={editandoUnidade.observacao ?? ''} onChange={e => setEditandoUnidade({ ...editandoUnidade, observacao: e.target.value })} />
               </Campo>
             </div>
+            {agruparPorSecao(campos).map(([secao, lista]) => (
+              <div key={secao} style={{ marginTop: 18 }}>
+                <div className="ficha-secao"><h3>{secao}</h3></div>
+                <div className="form-grid cols-2">
+                  {lista.map(c => (
+                    <Campo
+                      key={c.id}
+                      rotulo={c.nome + (c.obrigatorio ? ' *' : '')}
+                      dica={c.ajuda ?? undefined}
+                      className={c.tipo === 'texto_longo' || c.tipo === 'multipla_escolha' ? 'full' : ''}
+                    >
+                      <CampoDinamico
+                        id={`campo-${c.id}`}
+                        tipo={c.tipo}
+                        opcoes={c.opcoes}
+                        valor={editandoUnidade.dados_ficha?.[c.id]}
+                        aoMudar={v => setEditandoUnidade({ ...editandoUnidade, dados_ficha: { ...editandoUnidade.dados_ficha, [c.id]: v } })}
+                      />
+                    </Campo>
+                  ))}
+                </div>
+              </div>
+            ))}
             <div className="actions">
+              {ehGestor && editandoUnidade.id && (
+                <button type="button" className="btn danger" style={{ marginRight: 'auto' }} onClick={() => alterarAtiva(editandoUnidade as Unidade, false)}>
+                  Desativar UBS
+                </button>
+              )}
               <button type="button" className="btn" onClick={() => setEditandoUnidade(null)}>Cancelar</button>
               <button className="btn primary">Salvar</button>
             </div>

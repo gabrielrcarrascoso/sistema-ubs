@@ -33,6 +33,9 @@ export function traduzErro(err: unknown): string {
     [/duplicate key value.*indicadores/i, 'Já existe um indicador com esse código.'],
     [/duplicate key value/i, 'Registro duplicado: já existe um item com esses dados.'],
     [/row-level security/i, 'Você não tem permissão para alterar dados desta unidade.'],
+    [/Somente gestores podem alterar/i, 'Somente o administrador geral pode alterar papel, unidade ou situação de usuários.'],
+    [/pelo menos um gestor ativo/i, 'O sistema precisa de pelo menos um administrador geral ativo.'],
+    [/Coordenador precisa estar vinculado/i, 'O administrador da UBS precisa estar vinculado a uma unidade.'],
     [/Failed to fetch|NetworkError/i, 'Sem conexão com o servidor. Verifique sua internet.'],
     [/New password should be different/i, 'A nova senha precisa ser diferente da atual.'],
   ];

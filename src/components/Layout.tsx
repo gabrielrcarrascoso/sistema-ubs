@@ -21,10 +21,13 @@ export function Layout() {
         <nav className="menu" aria-label="Menu principal">
           <div className="sub">Designação</div>
           <NavLink to="/" end className={link}>◫ &nbsp;Painel geral</NavLink>
-          <NavLink to="/unidades" className={link}>⌂ &nbsp;Unidades e equipes</NavLink>
+          <NavLink to="/unidades" className={link}>⌂ &nbsp;UBS: ficha e equipe</NavLink>
           <NavLink to="/matriz" className={link}>▦ &nbsp;Matriz de atividades</NavLink>
           <NavLink to="/restricoes" className={link}>⚑ &nbsp;Restrições</NavLink>
           <NavLink to="/coleta" className={link}>✎ &nbsp;Coleta e capacidade</NavLink>
+
+          <div className="sub">Pesquisa de campo</div>
+          <NavLink to="/questionarios" className={link}>✍ &nbsp;Questionários</NavLink>
 
           <div className="sub">Indicadores APS</div>
           <NavLink to="/indicadores" className={link}>◔ &nbsp;Painel de indicadores</NavLink>
@@ -36,6 +39,7 @@ export function Layout() {
             <>
               <div className="sub">Administração</div>
               <NavLink to="/usuarios" className={link}>☺ &nbsp;Usuários</NavLink>
+              <NavLink to="/campos-ficha" className={link}>⚙ &nbsp;Campos da ficha</NavLink>
               <NavLink to="/auditoria" className={link}>⟲ &nbsp;Auditoria</NavLink>
             </>
           )}

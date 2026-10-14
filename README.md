@@ -6,6 +6,10 @@ Sistema web de apoio à gestão das Unidades Básicas de Saúde (UBS), unindo du
   pendências e coleta de campo com cálculo de capacidade.
 - **APS Data & Performance:** painel de indicadores, dicionário de dados, fórmulas padronizadas com versão,
   importação de planilhas, controle de qualidade e auditoria (rastreabilidade).
+- **Ficha configurável da UBS:** o administrador geral define quais informações toda UBS tem (CNES, endereço,
+  estrutura… e qualquer campo novo, sem programar); o administrador de cada UBS preenche a sua.
+- **Questionários de campo:** o administrador geral monta pesquisas (texto, número, sim/não, escolhas, escala 1–5),
+  cada UBS responde e o sistema consolida e compara os resultados, com exportação CSV.
 
 > **Privacidade (LGPD):** o sistema trabalha **somente com dados agregados** (por unidade e mês) e dados de equipe.
 > **Nunca** cadastre nome, CPF, Cartão SUS ou qualquer dado de paciente.
@@ -24,15 +28,15 @@ Sistema web de apoio à gestão das Unidades Básicas de Saúde (UBS), unindo du
 
 ## Papéis de usuário
 
-| Papel | O que pode fazer |
+| Papel (nome no banco) | O que pode fazer |
 |---|---|
-| **Gestor(a) da Secretaria** | Vê e edita tudo, aprova usuários, mantém o dicionário de indicadores, vê a auditoria |
-| **Coordenador(a) de UBS** | Vê tudo e edita **apenas a própria unidade** |
-| **Profissional** | Somente consulta |
+| **Administrador(a) geral** (`gestor`) | Cria/desativa UBS, define os campos da ficha, cria questionários, mantém o dicionário de indicadores, aprova usuários, vê tudo e a auditoria |
+| **Administrador(a) da UBS** (`coordenador`) | Altera **tudo da própria UBS**: ficha, equipe, matriz, restrições, coletas, lançamentos e respostas de questionários |
+| **Profissional** (`profissional`) | Somente consulta |
 
-- Quem se cadastra entra **inativo** e só acessa depois que um gestor aprova (menu *Usuários*).
-- **O primeiro usuário cadastrado vira gestor automaticamente.** Cadastre-se primeiro!
-- O sistema não deixa ficar sem nenhum gestor ativo.
+- Quem se cadastra entra **inativo** e só acessa depois que o administrador geral aprova (menu *Usuários*).
+- **O primeiro usuário cadastrado vira administrador geral automaticamente.**
+- O sistema não deixa ficar sem nenhum administrador geral ativo.
 
 ## Estrutura de pastas
 
@@ -114,6 +118,15 @@ A chave *publishable* é pública por natureza: a segurança está nas regras RL
 *secret key* / *service_role* no código.
 
 ---
+
+## Ficha da UBS e questionários
+
+- **Campos da ficha** (menu *Administração → Campos da ficha*): crie, renomeie, reordene, desative ou remova campos.
+  Tipos: texto curto/longo, número, data, sim/não, escolha única, múltipla escolha e escala 1–5. Os valores ficam em
+  `unidades.dados_ficha` (JSON indexado pelo id do campo).
+- **Questionários** (menu *Pesquisa de campo*): ficam em **rascunho** até o administrador geral abri-los.
+  Com o questionário **aberto**, cada administrador de UBS responde pela sua unidade; **encerrado**, ninguém altera mais.
+  Rascunhos são invisíveis para as UBS, e cada UBS só vê as próprias respostas (o administrador geral vê todas).
 
 ## Regras dos indicadores
 

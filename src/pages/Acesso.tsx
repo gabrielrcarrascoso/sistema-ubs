@@ -100,7 +100,7 @@ export function Cadastro() {
       <CaixaAcesso titulo="Confirme seu e-mail">
         <div className="info">
           Enviamos um link de confirmação para <b>{email}</b>. Abra o e-mail <b>neste mesmo navegador</b> e clique
-          no link. Depois disso, um gestor precisa aprovar seu acesso.
+          no link. Depois disso, o administrador geral precisa aprovar seu acesso.
         </div>
         <div className="auth-links">
           <Link to="/login">Voltar para o login</Link>
@@ -112,7 +112,7 @@ export function Cadastro() {
   return (
     <CaixaAcesso titulo="Criar conta">
       <p className="muted" style={{ marginBottom: 6 }}>
-        Após o cadastro, um gestor da Secretaria precisa aprovar seu acesso.
+        Após o cadastro, o administrador geral precisa aprovar seu acesso.
       </p>
       <form onSubmit={cadastrar}>
         <Erro mensagem={erro} />
@@ -267,8 +267,8 @@ export function AguardandoAprovacao() {
   return (
     <CaixaAcesso titulo="Aguardando aprovação">
       <div className="info">
-        Olá{perfil?.nome ? `, ${perfil.nome}` : ''}! Sua conta foi criada. Um gestor da Secretaria precisa aprovar seu
-        acesso e definir seu papel (coordenador ou profissional).
+        Olá{perfil?.nome ? `, ${perfil.nome}` : ''}! Sua conta foi criada. O administrador geral precisa aprovar seu
+        acesso e definir seu papel (administrador da UBS ou profissional).
       </div>
       <div className="actions" style={{ marginTop: 16 }}>
         <button className="btn primary" onClick={recarregarPerfil}>

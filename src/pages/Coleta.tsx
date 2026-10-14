@@ -162,7 +162,7 @@ export function Coleta() {
         </Painel>
       ) : (
         <div className="callout" style={{ marginBottom: 20 }}>
-          Você pode consultar as coletas desta unidade, mas apenas o gestor ou o coordenador da unidade podem registrar novas.
+          Você pode consultar as coletas desta unidade, mas apenas o administrador geral ou o administrador desta UBS podem registrar novas.
         </div>
       )}
 

@@ -17,6 +17,11 @@ import { Qualidade } from './pages/Qualidade';
 import { Usuarios } from './pages/Usuarios';
 import { Auditoria } from './pages/Auditoria';
 import { MeuPerfil } from './pages/MeuPerfil';
+import { CamposFicha } from './pages/CamposFicha';
+import { Questionarios } from './pages/Questionarios';
+import { QuestionarioEditar } from './pages/QuestionarioEditar';
+import { QuestionarioResponder } from './pages/QuestionarioResponder';
+import { QuestionarioResultados } from './pages/QuestionarioResultados';
 
 /** Só deixa passar quem está logado E foi aprovado por um gestor */
 function Protegida({ children }: { children: ReactNode }) {
@@ -63,6 +68,11 @@ export function App() {
         <Route path="dicionario" element={<Dicionario />} />
         <Route path="qualidade" element={<Qualidade />} />
         <Route path="perfil" element={<MeuPerfil />} />
+        <Route path="questionarios" element={<Questionarios />} />
+        <Route path="questionarios/:id/responder" element={<QuestionarioResponder />} />
+        <Route path="questionarios/:id/resultados" element={<QuestionarioResultados />} />
+        <Route path="questionarios/:id/editar" element={<SoGestor><QuestionarioEditar /></SoGestor>} />
+        <Route path="campos-ficha" element={<SoGestor><CamposFicha /></SoGestor>} />
         <Route path="usuarios" element={<SoGestor><Usuarios /></SoGestor>} />
         <Route path="auditoria" element={<SoGestor><Auditoria /></SoGestor>} />
       </Route>

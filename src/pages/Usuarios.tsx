@@ -51,8 +51,8 @@ export function Usuarios() {
       <div className="cards">
         <Cartao titulo="Usuários" valor={perfis.length} nota="Cadastrados" />
         <Cartao titulo="Aguardando aprovação" valor={aguardando.length} nota="Sem acesso até serem aprovados" />
-        <Cartao titulo="Gestores" valor={perfis.filter(p => p.ativo && p.papel === 'gestor').length} nota="Acesso total" />
-        <Cartao titulo="Coordenadores" valor={perfis.filter(p => p.ativo && p.papel === 'coordenador').length} nota="Editam a própria unidade" />
+        <Cartao titulo="Administradores gerais" valor={perfis.filter(p => p.ativo && p.papel === 'gestor').length} nota="Acesso total" />
+        <Cartao titulo="Administradores de UBS" valor={perfis.filter(p => p.ativo && p.papel === 'coordenador').length} nota="Editam a própria unidade" />
       </div>
 
       <Painel titulo="Todos os usuários">
@@ -79,8 +79,8 @@ export function Usuarios() {
       </Painel>
 
       <div className="info">
-        <b>Papéis:</b> Gestor vê e edita tudo e aprova usuários · Coordenador edita apenas a sua unidade · Profissional só
-        consulta. Para desligar alguém, marque como inativo — o histórico de auditoria é preservado.
+        <b>Papéis:</b> Administrador geral cria as UBS, define a ficha e os questionários, aprova usuários e vê tudo ·
+        Administrador da UBS altera tudo da sua unidade e responde os questionários dela · Profissional só consulta. Para desligar alguém, marque como inativo — o histórico de auditoria é preservado.
       </div>
 
       {editando && (
@@ -98,7 +98,7 @@ export function Usuarios() {
               </select>
             </label>
             <label className="field">
-              <span className="label">Unidade {editando.papel === 'coordenador' && '(obrigatória)'}</span>
+              <span className="label">Unidade {editando.papel === 'coordenador' && '(obrigatória para administrador da UBS)'}</span>
               <select value={editando.unidade_id ?? ''} onChange={e => setEditando({ ...editando, unidade_id: e.target.value || null })}>
                 <option value="">Nenhuma</option>
                 {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}

@@ -1,8 +1,8 @@
 // Funções pequenas reaproveitadas em várias telas
 
 export const NOME_PAPEL = {
-  gestor: 'Gestor(a) da Secretaria',
-  coordenador: 'Coordenador(a) de UBS',
+  gestor: 'Administrador(a) geral',
+  coordenador: 'Administrador(a) da UBS',
   profissional: 'Profissional',
 } as const;
 

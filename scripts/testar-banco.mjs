@@ -55,5 +55,23 @@ await t('U1 le auditoria', await como(U1, `select acao, tabela, usuario_email fr
 await t('U1 tenta se rebaixar (unico gestor)', await como(U1, `update public.perfis set papel='profissional' where id='${U1}' returning papel`), /pelo menos um gestor/);
 await t('anon le unidades', await (async()=>{ await db.exec(`set role anon`); try { return (await db.query('select count(*) from public.unidades')).rows } catch(e){ return 'EXCECAO: '+e.message } finally { await db.exec('reset role') } })(), /permission denied/);
 
-console.log(falhas ? `\n${falhas} teste(s) falharam.` : '\nTodos os testes passaram.');
+// ---------- Ficha da UBS e questionários ----------
+const MARIA = `(select id from public.unidades where slug='maria')`, TARDE = `(select id from public.unidades where slug='tarde')`;
+await t('ficha padrao tem 18 campos', await como(U1, `select count(*) from public.campos_ficha`), [{count:18}]);
+await t('adm da UBS nao cria campo da ficha', await como(U2, `insert into public.campos_ficha (nome) values ('x') returning id`), /row-level security/);
+await t('adm da UBS edita ficha da propria UBS', await como(U2, `update public.unidades set dados_ficha = dados_ficha || '{"teste": "ok"}' where id=${MARIA} returning dados_ficha->>'teste' as v`), [{v:'ok'}]);
+await t('adm da UBS nao edita ficha de outra UBS', await como(U2, `update public.unidades set nome='x' where id=${TARDE} returning id`), []);
+await t('adm da UBS nao desativa a UBS', await como(U2, `update public.unidades set ativa=false where id=${MARIA} returning id`), /administrador geral/);
+await t('adm da UBS nao cria UBS', await como(U2, `insert into public.unidades (slug, nome) values ('nova','Nova') returning id`), /row-level security/);
+await t('rascunho invisivel para adm da UBS', await como(U2, `select count(*) from public.questionarios`), [{count:0}]);
+await t('perguntas do rascunho invisiveis', await como(U2, `select count(*) from public.perguntas`), [{count:0}]);
+await t('gestor abre questionario', await como(U1, `update public.questionarios set status='aberto' returning status`), [{status:'aberto'}]);
+await t('adm da UBS ve 10 perguntas', await como(U2, `select count(*) from public.perguntas`), [{count:10}]);
+await t('adm da UBS responde pela sua UBS', await como(U2, `insert into public.aplicacoes (questionario_id, unidade_id, respondente, respostas) values ((select id from public.questionarios limit 1), ${MARIA}, 'Enfermeira', '{"a":1}') returning respondente`), [{respondente:'Enfermeira'}]);
+await t('adm da UBS nao responde por outra UBS', await como(U2, `insert into public.aplicacoes (questionario_id, unidade_id, respostas) values ((select id from public.questionarios limit 1), ${TARDE}, '{}') returning id`), /row-level security/);
+await t('gestor ve respostas de todas', await como(U1, `select count(*) from public.aplicacoes`), [{count:1}]);
+await t('gestor encerra questionario', await como(U1, `update public.questionarios set status='encerrado' returning status`), [{status:'encerrado'}]);
+await t('encerrado nao recebe respostas', await como(U2, `insert into public.aplicacoes (questionario_id, unidade_id, respostas) values ((select id from public.questionarios limit 1), ${MARIA}, '{}') returning id`), /row-level security/);
+
+console.log(falhas ?`\n${falhas} teste(s) falharam.` : '\nTodos os testes passaram.');
 process.exit(falhas ? 1 : 0);

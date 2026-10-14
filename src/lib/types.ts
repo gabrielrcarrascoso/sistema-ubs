@@ -3,6 +3,18 @@
 export type Papel = 'gestor' | 'coordenador' | 'profissional';
 export type Nivel = 'executa' | 'apoia' | 'verificar' | 'nao';
 export type TipoIndicador = 'percentual' | 'contagem' | 'razao';
+export type TipoCampo =
+  | 'texto'
+  | 'texto_longo'
+  | 'numero'
+  | 'data'
+  | 'sim_nao'
+  | 'escolha_unica'
+  | 'multipla_escolha'
+  | 'escala';
+export type StatusQuestionario = 'rascunho' | 'aberto' | 'encerrado';
+/** Valor guardado num campo da ficha ou numa resposta de questionário */
+export type ValorCampo = string | number | boolean | string[] | null;
 
 export interface Perfil {
   id: string;
@@ -24,6 +36,7 @@ export interface Unidade {
   profissionais_declarados: number | null;
   observacao: string | null;
   ativa: boolean;
+  dados_ficha: Record<string, ValorCampo>;
 }
 
 export interface Atividade {
@@ -138,4 +151,48 @@ export interface RegistroAuditoria {
   dados_antes: Record<string, unknown> | null;
   dados_depois: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface CampoFicha {
+  id: string;
+  secao: string;
+  nome: string;
+  tipo: TipoCampo;
+  opcoes: string[];
+  ajuda: string | null;
+  obrigatorio: boolean;
+  ordem: number;
+  ativo: boolean;
+}
+
+export interface Questionario {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  status: StatusQuestionario;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Pergunta {
+  id: string;
+  questionario_id: string;
+  ordem: number;
+  enunciado: string;
+  tipo: TipoCampo;
+  opcoes: string[];
+  ajuda: string | null;
+  obrigatoria: boolean;
+}
+
+export interface Aplicacao {
+  id: string;
+  questionario_id: string;
+  unidade_id: string;
+  data_aplicacao: string;
+  respondente: string | null;
+  respostas: Record<string, ValorCampo>;
+  observacao: string | null;
+  created_at: string;
+  updated_at: string;
 }
