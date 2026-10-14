@@ -15,7 +15,7 @@ export function Layout() {
           <span className="logo">UBS</span>
           <span>
             <strong>Sistema UBS</strong>
-            <small>Salgueiro/PE · Atenção Primária</small>
+            <small>Salgueiro · PE</small>
           </span>
         </div>
 
@@ -41,6 +41,15 @@ export function Layout() {
       <main className="main">
         <Outlet />
       </main>
+
+      {/* No celular, o menu vira uma barra fixa embaixo da tela */}
+      <nav className="nav-inferior" aria-label="Menu">
+        <NavLink to="/" end><House size={20} strokeWidth={1.8} />Início</NavLink>
+        <NavLink to="/ubs"><Hospital size={20} strokeWidth={1.8} />{perfil?.papel === 'coordenador' ? 'Minha UBS' : 'UBS'}</NavLink>
+        <NavLink to="/questionarios"><ClipboardList size={20} strokeWidth={1.8} />Questionários</NavLink>
+        <NavLink to="/indicadores"><BarChart3 size={20} strokeWidth={1.8} />Indicadores</NavLink>
+        {ehGestor && <NavLink to="/configuracoes"><Settings size={20} strokeWidth={1.8} />Ajustes</NavLink>}
+      </nav>
     </div>
   );
 }

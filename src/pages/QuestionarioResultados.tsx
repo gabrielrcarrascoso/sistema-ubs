@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Download, Plus, Printer } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Printer, Trash2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -7,7 +7,7 @@ import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
 import type { Aplicacao, Pergunta, Questionario, Unidade } from '../lib/types';
 import { baixarCSV, dataBR, numeroBR } from '../lib/util';
 import { mostrarValor, vazio } from '../components/CampoDinamico';
-import { Cabecalho, Carregando, Cartao, Erro, Painel } from '../components/ui';
+import { BotaoIcone, Cabecalho, Carregando, Cartao, Erro, Painel } from '../components/ui';
 import { CLASSE_STATUS, NOME_STATUS } from './Questionarios';
 
 // Resultados consolidados do questionário (por pergunta e por UBS)
@@ -123,7 +123,7 @@ export function QuestionarioResultados() {
                     {podeEditar(a.unidade_id) && q.status === 'aberto' && (
                       <Link className="btn small" to={`/questionarios/${q.id}/responder?aplicacao=${a.id}`}>Editar</Link>
                     )}{' '}
-                    {podeEditar(a.unidade_id) && <button className="btn small danger" onClick={() => remover(a)}>Remover</button>}
+                    {podeEditar(a.unidade_id) && <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(a)} />}
                   </td>
                 </tr>
               ))}

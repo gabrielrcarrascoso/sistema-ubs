@@ -5,7 +5,7 @@ import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
 import type { Coleta, Equipe } from '../../lib/types';
 import { mesAno, numeroBR, ultimosMeses, valorIndicador } from '../../lib/util';
-import { BarraAba, Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
+import { Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
 
 interface Achado {
   gravidade: 'Alta' | 'Média' | 'Baixa';
@@ -105,10 +105,8 @@ export function Qualidade() {
       <Dica id="ind-qualidade">
         O sistema confere sozinho se faltam lançamentos, se há números estranhos (ex.: acima de 100%) ou dados desatualizados. Comece corrigindo os alertas de gravidade <b>Alta</b>.
       </Dica>
-      <BarraAba texto="Checagem automática de ausências, duplicidades, inconsistências e dados desatualizados." />
 
-      <Painel titulo="Período avaliado">
-        <div className="selectrow">
+      <div className="barra-filtros">
           <select value={qtdMeses} onChange={e => setQtdMeses(Number(e.target.value))} aria-label="Período">
             <option value={3}>Últimos 3 meses fechados</option>
             <option value={6}>Últimos 6 meses fechados</option>
@@ -116,7 +114,6 @@ export function Qualidade() {
           </select>
           <span className="chip neutral">{mesAno(meses[0])} a {mesAno(meses.at(-1)!)}</span>
         </div>
-      </Painel>
 
       <div className="cards">
         <Cartao titulo="Completude dos lançamentos" valor={`${numeroBR(completude)}%`} nota={`${presentes} de ${esperados} esperados`} />

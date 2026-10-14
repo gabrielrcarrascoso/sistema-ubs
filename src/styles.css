@@ -238,3 +238,70 @@ td.num, th.num { text-align: right; }
 .tarefa .icone { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #f1f5f8; color: #48687f; flex-shrink: 0; }
 .tarefa.alta .icone { background: #fff3d9; color: #976013; }
 .tarefa .ir { display: inline-flex; align-items: center; gap: 2px; }
+
+/* =====================================================================
+   POLIMENTO (sobrepõe regras anteriores)
+   ===================================================================== */
+.main { margin: 0 auto; align-self: start; padding-bottom: 48px; }
+.btn { white-space: nowrap; }
+.btn.icone { padding: 6px 8px; color: #5d7185; }
+.btn.icone:hover:not(:disabled) { color: var(--text); background: #f1f5f8; filter: none; }
+.btn.icone.danger { color: #b9524d; }
+.btn.icone.danger:hover:not(:disabled) { background: #fdf1f0; color: var(--danger); }
+.acoes-linha { display: inline-flex; gap: 4px; justify-content: flex-end; }
+
+/* grades que se ajustam à largura disponível */
+.cards { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.three { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.atalhos { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.ficha-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* topo das páginas */
+.top { align-items: flex-end; flex-wrap: wrap; }
+.top h1 { margin-top: 0; }
+.top .actions { justify-content: flex-end; }
+
+/* seletor de UBS */
+.seletor-ubs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -8px 0 18px; color: var(--muted); font-size: 13px; font-weight: 650; }
+.seletor-ubs select { font: inherit; font-weight: 750; font-size: 14px; padding: 8px 12px; border-radius: 9px; border: 1.5px solid #c9d8e4; background: white; color: var(--text); min-width: 220px; max-width: 100%; }
+.seletor-ubs select:focus { outline: 2px solid #9fd8cf; border-color: var(--primary); }
+
+/* abas: quebram linha no computador, deslizam no celular (sem barra de rolagem) */
+.abas { flex-wrap: wrap; overflow: visible; row-gap: 2px; }
+
+/* filtros em linha, sem caixa em volta */
+.barra-filtros { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.barra-filtros select, .barra-filtros input { border-radius: 8px; border: 1px solid #d8e3ec; background: white; padding: 8px 10px; color: #28435a; }
+
+/* carregando */
+.loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 48px; }
+.loading::before { content: ''; width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid #cfe3df; border-top-color: var(--primary); animation: girar .8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* barra de navegação inferior (só no celular) */
+.nav-inferior { display: none; }
+
+@media (max-width: 780px) {
+  .side { position: sticky; top: 0; z-index: 20; padding: 8px 12px; flex-direction: row; align-items: center; justify-content: space-between; height: auto; }
+  .side .brand { border: 0; padding: 0; }
+  .side .brand .logo { padding: 8px 9px; font-size: 13px; border-radius: 10px; }
+  .side .menu { display: none; }
+  .side-user { margin: 0; padding: 0; border: 0; display: flex; align-items: center; gap: 10px; }
+  .side-user > div { text-align: right; font-size: 11px; }
+  .main { padding: 18px 14px 96px; }
+  .abas { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .abas::-webkit-scrollbar { display: none; }
+  .top { align-items: flex-start; }
+  .top .actions { justify-content: flex-start; }
+  .seletor-ubs select { min-width: 0; width: 100%; }
+  .nav-inferior {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--side); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -6px 20px #0d1f3326;
+  }
+  .nav-inferior a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; color: #a9c1d3; text-decoration: none; font-size: 10.5px; font-weight: 700; border-radius: 10px; }
+  .nav-inferior a.active { color: white; background: #23445f; }
+}
+@media print { .nav-inferior, .seletor-ubs { display: none !important; } }
+.btn.icone + .btn.icone { margin-left: 4px; }

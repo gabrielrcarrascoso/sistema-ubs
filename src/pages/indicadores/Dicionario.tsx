@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Plus } from 'lucide-react';
+import { Download, Pencil, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, descreverFormula, NOME_TIPO } from '../../lib/indicadores';
 import type { Indicador, TipoIndicador } from '../../lib/types';
 import { baixarCSV, dataHoraBR, numOuNull, valorIndicador } from '../../lib/util';
-import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 const NOVO: Partial<Indicador> = {
   tipo: 'percentual',
@@ -83,8 +83,7 @@ export function Dicionario() {
       <Dica id="ind-definicoes">
         A “receita” de cada indicador: o que conta, como calcula, de onde vem o dado e qual a meta. Assim todas as UBS calculam do mesmo jeito.
       </Dica>
-      <BarraAba texto="Nome, definição, fórmula, fonte e meta de cada indicador — a mesma regra para todas as unidades."
-        acoes={
+      <BarraAba acoes={
           <>
             <button className="btn" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar dicionário</button>
             {ehGestor && <button className="btn primary" onClick={() => setEditando(NOVO)}><Plus size={16} strokeWidth={1.8} /> Novo indicador</button>}
@@ -107,7 +106,7 @@ export function Dicionario() {
               {!i.ativo && <span className="chip neutral">Inativo</span>}
               <span className="chip neutral">v{i.versao}</span>
               <span className="chip">{NOME_TIPO[i.tipo]}</span>
-              {ehGestor && <button className="btn small" onClick={() => setEditando(i)}>Editar</button>}
+              {ehGestor && <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando(i)} />}
             </div>
           }
         >

@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Coleta as ColetaT, Unidade } from '../../lib/types';
 import { baixarCSV, dataBR, numeroBR, numOuNull } from '../../lib/util';
-import { BarraAba, Campo, Carregando, Cartao, Dica, Erro, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Campo, Carregando, Cartao, Dica, Erro, Painel } from '../../components/ui';
 
 type Formulario = Partial<ColetaT>;
 
@@ -216,8 +216,8 @@ export function AbaColetas({ unidade }: { unidade: Unidade }) {
                       <td>{c.fonte}</td>
                       {editavel && (
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <button className="btn small" onClick={() => { setForm(c); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Editar</button>{' '}
-                          <button className="btn small danger" onClick={() => remover(c)}>Remover</button>
+                          <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => { setForm(c); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+                          <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(c)} />
                         </td>
                       )}
                     </tr>

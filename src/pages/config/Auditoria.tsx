@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { RegistroAuditoria } from '../../lib/types';
 import { dataHoraBR } from '../../lib/util';
-import { BarraAba, Dica, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { Dica, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 const NOME_TABELA: Record<string, string> = {
   unidades: 'Unidades', perfis: 'Usuários', atividades: 'Atividades', equipes: 'Equipes', competencias: 'Matriz',
@@ -37,11 +37,9 @@ export function Auditoria() {
       <Dica id="config-historico">
         Tudo o que é criado, alterado ou removido no sistema fica registrado aqui: <b>quem</b>, <b>quando</b> e <b>o que mudou</b>. Clique em <b>Detalhes</b> para ver o valor antes e depois.
       </Dica>
-      <BarraAba texto="Rastreabilidade: quem alterou o quê, quando e qual era o valor anterior." />
       <Erro mensagem={erro} />
 
-      <Painel titulo="Filtros">
-        <div className="selectrow">
+      <div className="barra-filtros">
           <select value={tabela} onChange={e => setTabela(e.target.value)} aria-label="Área">
             <option value="">Todas as áreas</option>
             {Object.entries(NOME_TABELA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -51,7 +49,6 @@ export function Auditoria() {
             <option value={500}>Últimos 500</option>
           </select>
         </div>
-      </Painel>
 
       <Painel titulo="Histórico de alterações">
         {carregando ? (

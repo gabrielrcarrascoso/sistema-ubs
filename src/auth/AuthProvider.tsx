@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Perfil } from '../lib/types';
+import { limparMemoria } from '../lib/hooks';
 
 // "Contexto" = informações do usuário logado disponíveis para qualquer tela
 interface AuthInfo {
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sair = async () => {
     await supabase.auth.signOut();
+    limparMemoria(); // não deixa dados de um usuário para o próximo
     setPerfil(null);
     setRecuperacao(false);
     window.location.hash = '#/login';

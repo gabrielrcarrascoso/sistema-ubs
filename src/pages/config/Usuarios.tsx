@@ -4,7 +4,7 @@ import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
 import type { Papel, Perfil } from '../../lib/types';
 import { dataBR, NOME_PAPEL } from '../../lib/util';
-import { BarraAba, Dica, Carregando, Cartao, Erro, Modal, Painel } from '../../components/ui';
+import { Dica, Carregando, Cartao, Erro, Modal, Painel } from '../../components/ui';
 
 export function Usuarios() {
   const { perfil: eu, recarregarPerfil } = useAuth();
@@ -17,7 +17,7 @@ export function Usuarios() {
       buscarUnidades(),
     ]);
     return { perfis, unidades };
-  }, []);
+  }, [], 'usuarios');
 
   if (carregando) return <Carregando />;
   if (!dados) return <Erro mensagem={erroQ} />;
@@ -48,7 +48,6 @@ export function Usuarios() {
       <Dica id="config-usuarios">
         Quem cria conta no site aparece aqui como <b>Aguardando</b>. Clique em <b>Aprovar</b> e escolha o papel: <b>Administrador da UBS</b> (precisa escolher a UBS dele) ou <b>Profissional</b> (só consulta). Para tirar o acesso de alguém, mude a situação para <b>Inativo</b>.
       </Dica>
-      <BarraAba texto="Aprovação de acessos, papéis e vínculo com unidades." />
       <Erro mensagem={(!editando && erro) || erroQ} />
 
       <div className="cards">

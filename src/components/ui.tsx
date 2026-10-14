@@ -35,7 +35,6 @@ export function Cabecalho({ titulo, subtitulo, acoes }: { titulo: string; subtit
   return (
     <div className="top">
       <div>
-        <div className="eyebrow">Sistema UBS · Salgueiro/PE</div>
         <h1>{titulo}</h1>
         <p>{subtitulo}</p>
       </div>
@@ -46,6 +45,27 @@ export function Cabecalho({ titulo, subtitulo, acoes }: { titulo: string; subtit
 
 export function NivelTag({ nivel }: { nivel: Nivel }) {
   return <span className={CLASSE_NIVEL[nivel]}>{NOME_NIVEL[nivel]}</span>;
+}
+
+/** Botão pequeno só com ícone (o texto aparece ao passar o mouse e é lido por leitores de tela) */
+export function BotaoIcone({
+  icone: Icone,
+  titulo,
+  aoClicar,
+  perigo,
+  desativado,
+}: {
+  icone: LucideIcon;
+  titulo: string;
+  aoClicar: () => void;
+  perigo?: boolean;
+  desativado?: boolean;
+}) {
+  return (
+    <button type="button" className={`btn icone ${perigo ? 'danger' : ''}`} title={titulo} aria-label={titulo} onClick={aoClicar} disabled={desativado}>
+      <Icone size={15} strokeWidth={1.9} />
+    </button>
+  );
 }
 
 export function Carregando() {

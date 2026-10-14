@@ -20,7 +20,7 @@ export function PaginaIndicadores() {
 
   return (
     <>
-      <Cabecalho titulo="Indicadores" subtitulo="Números mensais das UBS, com fórmulas padronizadas e conferência de qualidade." />
+      <Cabecalho titulo="Indicadores" subtitulo="Números mensais das UBS, calculados sempre do mesmo jeito." />
       <BarraDeAbas abas={abas} atual={aba} aoMudar={setAba} />
       {aba === 'painel' && <PainelIndicadores />}
       {aba === 'lancar' && <Lancamentos />}

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Check, Plus, RotateCcw } from 'lucide-react';
+import { Check, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Pendencia, Restricao, Unidade } from '../../lib/types';
-import { Campo, Carregando, Dica, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, Campo, Carregando, Dica, Erro, Modal, Painel } from '../../components/ui';
 
 const STATUS_SUGERIDOS = [
   'Confirmado em entrevista',
@@ -132,13 +132,8 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
                     <td>{r.validar}</td>
                     {editavel && (
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn small" onClick={() => setRestricao(r)}>Editar</button>{' '}
-                        <button
-                          className="btn small danger"
-                          onClick={() => confirm('Remover esta restrição?') && executar(supabase.from('restricoes').delete().eq('id', r.id))}
-                        >
-                          Remover
-                        </button>
+                        <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setRestricao(r)} />
+                        <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm('Remover esta restrição?') && executar(supabase.from('restricoes').delete().eq('id', r.id))} />
                       </td>
                     )}
                   </tr>
@@ -184,7 +179,7 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
                 >
                   {p.concluida ? <><RotateCcw size={14} strokeWidth={1.8} /> Reabrir</> : <><Check size={14} strokeWidth={2} /> Concluir</>}
                 </button>
-                <button className="btn small" onClick={() => setPendencia(p)}>Editar</button>
+                <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setPendencia(p)} />
               </div>
             )}
           </div>

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Plus } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Atividade, Competencia, Equipe, Nivel, Unidade } from '../../lib/types';
 import { baixarCSV, NOME_NIVEL, numOuNull, ORDEM_NIVEL } from '../../lib/util';
-import { Campo, Carregando, Dica, Erro, Modal, NivelTag, Painel } from '../../components/ui';
+import { BotaoIcone, Campo, Carregando, Dica, Erro, Modal, NivelTag, Painel } from '../../components/ui';
 
 /** Equipe da UBS (cargos e quantidades) + matriz de quem faz cada atividade */
 export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel: boolean }) {
@@ -21,7 +21,7 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
       ? ok<Competencia[]>(await supabase.from('competencias').select('*').in('equipe_id', equipes.map(e => e.id)))
       : [];
     return { equipes, atividades, niveis: new Map(comps.map(c => [`${c.equipe_id}|${c.atividade_id}`, c.nivel])) };
-  }, [u.id]);
+  }, [u.id], 'equipe');
 
   if (carregando) return <Carregando />;
   if (!dados) return <Erro mensagem={erroQ} />;
@@ -123,8 +123,8 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
                   <td>{eq.observacoes}</td>
                   {editavel && (
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      <button className="btn small" onClick={() => setEditando(eq)}>Editar</button>{' '}
-                      <button className="btn small danger" onClick={() => remover(eq)}>Remover</button>
+                      <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando(eq)} />
+                      <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(eq)} />
                     </td>
                   )}
                 </tr>

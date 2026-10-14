@@ -6,7 +6,7 @@ import { supabase, traduzErro } from '../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
 import type { Aplicacao, Pergunta, Questionario, StatusQuestionario } from '../lib/types';
 import { dataBR } from '../lib/util';
-import { Cabecalho, Campo, Carregando, Cartao, Dica, Erro, Modal } from '../components/ui';
+import { Cabecalho, Campo, Carregando, Dica, Erro, Modal } from '../components/ui';
 
 export const NOME_STATUS: Record<StatusQuestionario, string> = {
   rascunho: 'Rascunho',
@@ -29,7 +29,7 @@ export function Questionarios() {
       buscarUnidades(),
     ]);
     return { questionarios, perguntas, aplicacoes, unidades };
-  }, []);
+  }, [], 'questionarios');
 
   if (carregando) return <Carregando />;
   if (!dados) return <Erro mensagem={erroQ} />;
@@ -52,14 +52,14 @@ export function Questionarios() {
   return (
     <>
       <Cabecalho
-        titulo="Questionários de campo"
-        subtitulo="Pesquisas aplicadas nas UBS: o administrador geral monta, cada UBS responde e o sistema compara os resultados."
+        titulo="Questionários"
+        subtitulo="Pesquisas de campo aplicadas nas UBS."
         acoes={ehGestor && <button className="btn primary" onClick={() => setCriando({ titulo: '', descricao: '' })}><Plus size={16} strokeWidth={1.8} /> Novo questionário</button>}
       />
       <Dica id="questionarios">
         {ehGestor ? (
           <ol>
-            <li>Clique em <b><Plus size={16} strokeWidth={1.8} /> Novo questionário</b> e adicione as perguntas.</li>
+            <li>Clique em <b>Novo questionário</b> e adicione as perguntas.</li>
             <li>Clique em <b>Abrir para respostas</b> — só então as UBS conseguem ver e responder.</li>
             <li>Acompanhe em <b>Resultados</b> quem já respondeu e compare as respostas. Ao final, <b>Encerre</b>.</li>
           </ol>
@@ -69,12 +69,6 @@ export function Questionarios() {
       </Dica>
       <Erro mensagem={erroQ} />
 
-      <div className="cards">
-        <Cartao titulo="Questionários" valor={questionarios.length} nota={ehGestor ? 'Incluindo rascunhos' : 'Abertos e encerrados'} />
-        <Cartao titulo="Abertos" valor={questionarios.filter(q => q.status === 'aberto').length} nota="Recebendo respostas" />
-        <Cartao titulo="Respostas visíveis" valor={aplicacoes.length} nota={ehGestor ? 'De todas as UBS' : 'Da sua UBS'} />
-        <Cartao titulo="UBS" valor={unidades.length} nota="Ativas" />
-      </div>
 
       {questionarios.length === 0 && (
         <div className="callout">
@@ -97,7 +91,7 @@ export function Questionarios() {
               </div>
               <span className={`chip ${CLASSE_STATUS[q.status]}`}>{NOME_STATUS[q.status]}</span>
             </div>
-            {q.descricao && <p style={{ marginBottom: 14 }}>{q.descricao}</p>}
+            {q.descricao && <p style={{ marginBottom: 14, fontSize: 14 }}>{q.descricao}</p>}
             <div className="actions">
               {q.status === 'aberto' && possoResponder && (
                 <Link className="btn primary" to={`/questionarios/${q.id}/responder`}>Responder</Link>

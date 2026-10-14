@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Plus, Upload } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos, calcularValor } from '../../lib/indicadores';
 import type { Indicador, Lancamento, Unidade } from '../../lib/types';
 import { baixarCSV, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../../lib/util';
-import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 interface Formulario {
   id?: string;
@@ -125,8 +125,7 @@ export function Lancamentos() {
       <Dica id="ind-lancar">
         Todo mês, registre os números de cada indicador por UBS (tirados do e-SUS/PEC). Use <b><Plus size={16} strokeWidth={1.8} /> Novo lançamento</b> para um número, ou <b>Importar planilha</b> para vários de uma vez. O sistema calcula o resultado sozinho.
       </Dica>
-      <BarraAba texto="Registro mensal dos dados de cada unidade, com fonte e versão da fórmula."
-        acoes={
+      <BarraAba acoes={
           <>
             <button className="btn" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar CSV</button>
             {unidadesEditaveis.length > 0 && (
@@ -140,8 +139,7 @@ export function Lancamentos() {
       />
       <Erro mensagem={(!form && erro) || baseQ.erro || lancQ.erro} />
 
-      <Painel titulo="Filtros">
-        <div className="selectrow">
+      <div className="barra-filtros">
           <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} aria-label="Unidade">
             <option value="">Todas as unidades</option>
             {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
@@ -157,7 +155,6 @@ export function Lancamentos() {
           </select>
           <span className="chip neutral">{lancamentos.length} registro(s)</span>
         </div>
-      </Painel>
 
       <Painel titulo="Registros">
         {lancQ.carregando ? (
@@ -196,8 +193,8 @@ export function Lancamentos() {
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {podeEditar(l.unidade_id) && (
                         <>
-                          <button className="btn small" onClick={() => editar(l)}>Editar</button>{' '}
-                          <button className="btn small danger" onClick={() => remover(l)}>Remover</button>
+                          <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => editar(l)} />
+                          <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(l)} />
                         </>
                       )}
                     </td>

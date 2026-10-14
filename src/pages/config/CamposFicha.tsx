@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { CampoFicha, TipoCampo, Unidade } from '../../lib/types';
 import { lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../../components/CampoDinamico';
-import { BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 
 export async function buscarCamposFicha(somenteAtivos = true): Promise<CampoFicha[]> {
   let q = supabase.from('campos_ficha').select('*').order('ordem').order('nome');
@@ -80,8 +80,7 @@ export function CamposFicha() {
       <Dica id="config-campos">
         Aqui você decide <b>quais informações toda UBS deve ter</b>. Criou um campo? Ele aparece na hora na ficha de todas as UBS, e o administrador de cada uma preenche. Use <b>Desativar</b> para esconder sem perder o que já foi preenchido.
       </Dica>
-      <BarraAba texto="Defina quais informações cada UBS deve ter. Os administradores das UBS preenchem a ficha da própria unidade."
-        acoes={<button className="btn primary" onClick={() => setEditando({ tipo: 'texto', secao: secoes.at(-1) ?? 'Outras informações' })}><Plus size={16} strokeWidth={1.8} /> Novo campo</button>}
+      <BarraAba acoes={<button className="btn primary" onClick={() => setEditando({ tipo: 'texto', secao: secoes.at(-1) ?? 'Outras informações' })}><Plus size={16} strokeWidth={1.8} /> Novo campo</button>}
       />
       <Erro mensagem={(!editando && erro) || camposQ.erro} />
 
@@ -107,8 +106,8 @@ export function CamposFicha() {
                     <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                       <button className="btn small" disabled={i === 0} onClick={() => mover(c, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>{' '}
                       <button className="btn small" disabled={i === lista.length - 1} onClick={() => mover(c, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>{' '}
-                      <button className="btn small" onClick={() => setEditando({ ...c, opcoesTexto: c.opcoes.join('\n') })}>Editar</button>{' '}
-                      <button className="btn small danger" onClick={() => remover(c)}>Remover</button>
+                      <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando({ ...c, opcoesTexto: c.opcoes.join('\n') })} />
+                      <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(c)} />
                     </td>
                   </tr>
                 ))}

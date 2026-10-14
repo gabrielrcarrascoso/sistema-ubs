@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, traduzErro } from '../lib/supabase';
 import { ok, useConsulta } from '../lib/hooks';
 import type { Pergunta, Questionario, StatusQuestionario, TipoCampo } from '../lib/types';
 import { CampoDinamico, lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../components/CampoDinamico';
-import { Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
+import { BotaoIcone, Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
 import { CLASSE_STATUS, NOME_STATUS } from './Questionarios';
 
 type Edicao = Partial<Pergunta> & { opcoesTexto?: string };
@@ -137,10 +137,8 @@ export function QuestionarioEditar() {
               <div className="actions" style={{ flexShrink: 0 }}>
                 <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>
                 <button className="btn small" disabled={i === perguntas.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>
-                <button className="btn small" onClick={() => setEditando({ ...p, opcoesTexto: p.opcoes.join('\n') })}>Editar</button>
-                <button className="btn small danger" onClick={() => confirm('Remover esta pergunta? Respostas já dadas a ela deixam de aparecer.') && executar(supabase.from('perguntas').delete().eq('id', p.id))}>
-                  Remover
-                </button>
+                <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando({ ...p, opcoesTexto: p.opcoes.join('\n') })} />
+                <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm('Remover esta pergunta? Respostas já dadas a ela deixam de aparecer.') && executar(supabase.from('perguntas').delete().eq('id', p.id))} />
               </div>
             </div>
           </div>

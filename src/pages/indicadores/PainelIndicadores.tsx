@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../../lib/indicadores';
 import type { Lancamento } from '../../lib/types';
 import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../../lib/util';
 import { GraficoBarras } from '../../components/GraficoBarras';
-import { BarraAba, Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
+import { Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
 
 export function PainelIndicadores() {
+  const { perfil } = useAuth();
   const [unidadeId, setUnidadeId] = useState('');
   const [indicadorId, setIndicadorId] = useState('');
   const [qtdMeses, setQtdMeses] = useState(6);
@@ -20,7 +22,7 @@ export function PainelIndicadores() {
       buscarLancamentos({ desde: ultimosMeses(24)[0] }),
     ]);
     return { indicadores, unidades, lancamentos };
-  }, []);
+  }, [], 'painel-indicadores');
 
   if (carregando) return <Carregando />;
   if (erro || !dados) return <Erro mensagem={erro} />;
@@ -56,12 +58,7 @@ export function PainelIndicadores() {
       <Dica id="ind-painel">
         Resumo dos indicadores. Escolha <b>uma UBS</b> ou veja <b>todas juntas</b>. Valores em <b>verde</b> atingiram a meta; em <b>vermelho</b>, não atingiram.
       </Dica>
-      <BarraAba texto="Dados padronizados, fórmulas únicas e rastreabilidade — APS Data & Performance."
-        acoes={<Link to="/indicadores?aba=lancar" className="btn primary"><Plus size={16} strokeWidth={1.8} /> Lançar dados</Link>}
-      />
-
-      <Painel titulo="Visão">
-        <div className="selectrow">
+      <div className="barra-filtros">
           <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} aria-label="Unidade">
             <option value="">Todas as unidades (consolidado)</option>
             {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
@@ -71,8 +68,12 @@ export function PainelIndicadores() {
             <option value={12}>Últimos 12 meses</option>
           </select>
           {ultimoMesComDado && <span className="chip neutral">Último mês com dados: {mesAno(ultimoMesComDado)}</span>}
+          {perfil?.papel !== 'profissional' && (
+            <Link to="/indicadores?aba=lancar" className="btn primary" style={{ marginLeft: 'auto' }}>
+              <Plus size={16} strokeWidth={1.8} /> Lançar dados
+            </Link>
+          )}
         </div>
-      </Painel>
 
       {lancamentos.length === 0 && (
         <div className="alert" style={{ marginBottom: 20 }}>

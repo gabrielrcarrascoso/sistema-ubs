@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Atividade } from '../../lib/types';
-import { BarraAba, Carregando, Dica, Erro, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Carregando, Dica, Erro, Painel } from '../../components/ui';
 
 /** Lista de atividades que aparecem como colunas na matriz de todas as UBS */
 export function Atividades() {
@@ -61,21 +61,11 @@ export function Atividades() {
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>{' '}
                     <button className="btn small" disabled={i === atividades.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>{' '}
-                    <button
-                      className="btn small"
-                      onClick={() => {
+                    <BotaoIcone icone={Pencil} titulo="Renomear" aoClicar={() => {
                         const nome = prompt('Novo nome da atividade:', a.nome);
                         if (nome?.trim()) executar(supabase.from('atividades').update({ nome: nome.trim() }).eq('id', a.id));
-                      }}
-                    >
-                      Renomear
-                    </button>{' '}
-                    <button
-                      className="btn small danger"
-                      onClick={() => confirm(`Remover "${a.nome}" da matriz de TODAS as UBS?`) && executar(supabase.from('atividades').delete().eq('id', a.id))}
-                    >
-                      Remover
-                    </button>
+                      }} />{' '}
+                    <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm(`Remover "${a.nome}" da matriz de TODAS as UBS?`) && executar(supabase.from('atividades').delete().eq('id', a.id))} />
                   </td>
                 </tr>
               ))}

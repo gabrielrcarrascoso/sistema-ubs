@@ -46,7 +46,7 @@ export function Inicio() {
       ehGestor ? supabase.from('perfis').select('id', { count: 'exact', head: true }).eq('ativo', false) : Promise.resolve({ count: 0 }),
     ]);
     return { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos, aguardando: aguardando.count ?? 0 };
-  }, [ehGestor, mesPassado]);
+  }, [ehGestor, mesPassado], 'inicio');
 
   if (carregando) return <Carregando />;
   if (!dados || !perfil) return <Erro mensagem={erro} />;

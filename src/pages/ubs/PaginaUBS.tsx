@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileText, Flag, MapPin, Plus, Printer, Users } from 'lucide-react';
+import { Download, FileText, Flag, Hospital, MapPin, Plus, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta, useUnidadeEscolhida } from '../../lib/hooks';
 import type { Unidade } from '../../lib/types';
@@ -23,8 +23,8 @@ const ABAS: DefAba[] = [
 /** Tudo sobre uma UBS em um só lugar */
 export function PaginaUBS() {
   const { perfil, podeEditar, ehGestor } = useAuth();
-  const unidadesQ = useConsulta(buscarUnidades, []);
-  const camposQ = useConsulta(() => buscarCamposFicha(true), []);
+  const unidadesQ = useConsulta(buscarUnidades, [], 'unidades');
+  const camposQ = useConsulta(() => buscarCamposFicha(true), [], 'campos-ficha');
   const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
   const [aba, setAba] = useAba(ABAS, 'ficha');
   const [modal, setModal] = useState<Partial<Unidade> | null>(null);
@@ -52,17 +52,9 @@ export function PaginaUBS() {
     <>
       <Cabecalho
         titulo={u?.nome ?? 'UBS'}
-        subtitulo={editavel ? 'Tudo sobre esta UBS em um só lugar. Você pode editar.' : 'Tudo sobre esta UBS em um só lugar (somente consulta).'}
+        subtitulo={editavel ? 'Você pode editar as informações desta UBS.' : 'Somente consulta.'}
         acoes={
           <>
-            <select
-              className="seletor-grande"
-              value={unidadeId}
-              onChange={e => setUnidadeId(e.target.value)}
-              aria-label="Escolher UBS"
-            >
-              {unidades.map(x => <option key={x.id} value={x.id}>{x.nome}{x.id === perfil?.unidade_id ? ' (minha UBS)' : ''}</option>)}
-            </select>
             <button className="btn" onClick={() => window.print()} title="Imprimir ou salvar em PDF"><Printer size={16} strokeWidth={1.8} /> Imprimir</button>
             <button className="btn" onClick={exportarFichas} title="Planilha com a ficha de todas as UBS"><Download size={16} strokeWidth={1.8} /> Fichas (Excel)</button>
             {ehGestor && <button className="btn primary" onClick={() => setModal({ nome: '', dados_ficha: {} })}><Plus size={16} strokeWidth={1.8} /> Nova UBS</button>}
@@ -70,6 +62,16 @@ export function PaginaUBS() {
         }
       />
       <Erro mensagem={unidadesQ.erro || camposQ.erro} />
+
+      {unidades.length > 1 && (
+        <label className="seletor-ubs">
+          <Hospital size={16} strokeWidth={1.8} />
+          Ver outra UBS:
+          <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)}>
+            {unidades.map(x => <option key={x.id} value={x.id}>{x.nome}{x.id === perfil?.unidade_id ? ' (minha UBS)' : ''}</option>)}
+          </select>
+        </label>
+      )}
 
       {unidades.length === 0 && (
         <div className="callout">{ehGestor ? 'Nenhuma UBS cadastrada. Clique em “+ Nova UBS”.' : 'Nenhuma UBS cadastrada ainda.'}</div>
