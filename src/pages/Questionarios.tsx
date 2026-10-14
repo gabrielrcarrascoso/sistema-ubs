@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { BarChart3, Pencil, Plus, Send, Settings2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -16,7 +16,7 @@ export const NOME_STATUS: Record<StatusQuestionario, string> = {
 export const CLASSE_STATUS: Record<StatusQuestionario, string> = { rascunho: 'neutral', aberto: '', encerrado: 'warn' };
 
 export function Questionarios() {
-  const { ehGestor, podeEditar } = useAuth();
+  const { perfil, ehGestor, podeEditar } = useAuth();
   const navegar = useNavigate();
   const [criando, setCriando] = useState<{ titulo: string; descricao: string } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -80,24 +80,51 @@ export function Questionarios() {
         const nPerguntas = perguntas.filter(p => p.questionario_id === q.id).length;
         const respostas = aplicacoes.filter(a => a.questionario_id === q.id);
         const ubsRespondidas = new Set(respostas.map(a => a.unidade_id)).size;
+        const pct = unidades.length ? (ubsRespondidas / unidades.length) * 100 : 0;
+        const minhaResposta = perfil?.unidade_id ? respostas.find(a => a.unidade_id === perfil.unidade_id) : undefined;
         return (
-          <section className="panel" key={q.id}>
-            <div className="section-head">
+          <section className="panel questionario-card" key={q.id}>
+            <div className="section-head" style={{ marginBottom: 8 }}>
               <div>
                 <h2>{q.titulo}</h2>
                 <p className="muted" style={{ marginTop: 4 }}>
-                  {nPerguntas} pergunta(s) · {respostas.length} resposta(s) · {ubsRespondidas} de {unidades.length} UBS · criado em {dataBR(q.created_at)}
+                  {nPerguntas} pergunta(s) · criado em {dataBR(q.created_at)}
                 </p>
               </div>
               <span className={`chip ${CLASSE_STATUS[q.status]}`}>{NOME_STATUS[q.status]}</span>
             </div>
             {q.descricao && <p style={{ marginBottom: 14, fontSize: 14 }}>{q.descricao}</p>}
+
+            {q.status !== 'rascunho' && ehGestor && (
+              <div style={{ marginBottom: 16 }}>
+                <div className="bar-label"><span>UBS que já responderam</span><b>{ubsRespondidas} de {unidades.length}</b></div>
+                <div className="progresso"><div style={{ width: `${pct}%` }} /></div>
+              </div>
+            )}
+            {q.status === 'aberto' && !ehGestor && perfil?.unidade_id && (
+              <div className={minhaResposta ? 'info' : 'alert'} style={{ marginBottom: 14 }}>
+                {minhaResposta ? 'Sua UBS já respondeu. Você ainda pode corrigir enquanto o questionário estiver aberto.' : 'Sua UBS ainda não respondeu este questionário.'}
+              </div>
+            )}
+
             <div className="actions">
-              {q.status === 'aberto' && possoResponder && (
-                <Link className="btn primary" to={`/questionarios/${q.id}/responder`}>Responder</Link>
+              {/* Ação principal muda conforme a situação */}
+              {q.status === 'rascunho' && ehGestor && (
+                <Link className="btn primary" to={`/questionarios/${q.id}/editar`}><Pencil size={16} strokeWidth={1.8} /> Revisar e abrir</Link>
               )}
-              <Link className="btn" to={`/questionarios/${q.id}/resultados`}>Resultados</Link>
-              {ehGestor && <Link className="btn" to={`/questionarios/${q.id}/editar`}>Editar perguntas</Link>}
+              {q.status === 'aberto' && possoResponder && (
+                minhaResposta ? (
+                  <Link className="btn primary" to={`/questionarios/${q.id}/responder?aplicacao=${minhaResposta.id}`}><Pencil size={16} strokeWidth={1.8} /> Corrigir resposta</Link>
+                ) : (
+                  <Link className="btn primary" to={`/questionarios/${q.id}/responder`}><Send size={16} strokeWidth={1.8} /> Responder</Link>
+                )
+              )}
+              {q.status !== 'rascunho' && (
+                <Link className="btn" to={`/questionarios/${q.id}/resultados`}><BarChart3 size={16} strokeWidth={1.8} /> Resultados</Link>
+              )}
+              {ehGestor && q.status !== 'rascunho' && (
+                <Link className="btn" to={`/questionarios/${q.id}/editar`}><Settings2 size={16} strokeWidth={1.8} /> Gerenciar</Link>
+              )}
             </div>
           </section>
         );

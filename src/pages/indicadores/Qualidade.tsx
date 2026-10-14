@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
@@ -37,9 +38,10 @@ export function Qualidade() {
   const achados: Achado[] = [];
   const existe = new Set(lancamentos.map(l => `${l.indicador_id}|${l.unidade_id}|${l.competencia.slice(0, 7)}`));
 
-  // 1. Ausências
+  // 1. Ausências: quadro UBS × indicador com os meses que faltam
   let esperados = 0;
   let presentes = 0;
+  const faltas = new Map<string, string[]>();
   for (const i of indicadores)
     for (const u of unidades) {
       const faltando = meses.filter(m => {
@@ -48,22 +50,17 @@ export function Qualidade() {
         if (tem) presentes++;
         return !tem;
       });
-      if (faltando.length)
-        achados.push({
-          gravidade: faltando.length === meses.length ? 'Média' : 'Alta',
-          categoria: 'Ausência de dados',
-          descricao: `${i.codigo} sem lançamento em ${faltando.length} de ${meses.length} meses (${faltando.map(mesAno).join(', ')})`,
-          onde: u.nome,
-        });
+      faltas.set(`${u.id}|${i.id}`, faltando);
     }
+  const ubsEmDia = unidades.filter(u => indicadores.every(i => !faltas.get(`${u.id}|${i.id}`)?.length)).length;
 
   for (const l of lancamentos) {
     // 2. Percentual acima de 100%
     if (l.tipo_aplicado === 'percentual' && l.valor !== null && l.valor > 100)
-      achados.push({ gravidade: 'Alta', categoria: 'Inconsistência', descricao: `${l.codigo} em ${mesAno(l.competencia)} = ${valorIndicador(l.valor, '%')} (numerador maior que denominador)`, onde: l.unidade_nome });
+      achados.push({ gravidade: 'Alta', categoria: 'Inconsistência', descricao: `${l.indicador_nome} em ${mesAno(l.competencia)} = ${valorIndicador(l.valor, '%')} (quantidade maior que o total)`, onde: l.unidade_nome });
     // 3. Fórmula desatualizada
     if (l.versao_formula < l.versao_atual)
-      achados.push({ gravidade: 'Baixa', categoria: 'Versão da fórmula', descricao: `${l.codigo} em ${mesAno(l.competencia)} foi calculado com a fórmula v${l.versao_formula} (atual: v${l.versao_atual})`, onde: l.unidade_nome });
+      achados.push({ gravidade: 'Baixa', categoria: 'Versão da fórmula', descricao: `${l.indicador_nome} em ${mesAno(l.competencia)} foi calculado com uma fórmula antiga (v${l.versao_formula}; atual v${l.versao_atual})`, onde: l.unidade_nome });
   }
 
   // 4. Variação brusca (> 50%) em relação ao mês anterior
@@ -75,7 +72,7 @@ export function Qualidade() {
     if (ant?.valor && l.valor !== null) {
       const variacao = ((l.valor - ant.valor) / ant.valor) * 100;
       if (Math.abs(variacao) > 50)
-        achados.push({ gravidade: 'Média', categoria: 'Variação atípica', descricao: `${l.codigo} variou ${numeroBR(variacao)}% de ${mesAno(ant.competencia)} para ${mesAno(l.competencia)} — confirmar o dado`, onde: l.unidade_nome });
+        achados.push({ gravidade: 'Média', categoria: 'Variação atípica', descricao: `${l.indicador_nome} variou ${numeroBR(variacao)}% de ${mesAno(ant.competencia)} para ${mesAno(l.competencia)} — confirmar o número`, onde: l.unidade_nome });
     }
   }
 
@@ -116,20 +113,52 @@ export function Qualidade() {
         </div>
 
       <div className="cards">
-        <Cartao titulo="Completude dos lançamentos" valor={`${numeroBR(completude)}%`} nota={`${presentes} de ${esperados} esperados`} />
-        <Cartao titulo="Alertas de prioridade alta" valor={achados.filter(a => a.gravidade === 'Alta').length} nota="Corrigir primeiro" />
-        <Cartao titulo="Total de alertas" valor={achados.length} nota="Todas as verificações" />
-        <Cartao titulo="Duplicidades" valor="0" nota="Bloqueadas automaticamente pelo banco" />
+        <Cartao titulo="Números lançados" valor={`${numeroBR(completude, 0)}%`} nota={`${presentes} de ${esperados} esperados no período`} />
+        <Cartao titulo="UBS com tudo em dia" valor={`${ubsEmDia} de ${unidades.length}`} />
+        <Cartao titulo="Alertas para conferir" valor={achados.length} nota={`${achados.filter(a => a.gravidade === 'Alta').length} urgente(s)`} />
       </div>
 
-      <Painel titulo="Verificações encontradas">
+      <Painel titulo="Onde faltam números">
+        <div className="tablewrap">
+          <table className="quadro-faltas">
+            <thead>
+              <tr>
+                <th>UBS</th>
+                {indicadores.map(i => <th key={i.id} title={i.nome}>{i.nome}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {unidades.map(u => (
+                <tr key={u.id}>
+                  <td><b>{u.nome}</b></td>
+                  {indicadores.map(i => {
+                    const f = faltas.get(`${u.id}|${i.id}`) ?? [];
+                    return (
+                      <td key={i.id} title={f.length ? `Faltam: ${f.map(mesAno).join(', ')}` : 'Todos os meses lançados'}>
+                        {f.length === 0 ? (
+                          <span className="chip"><Check size={12} strokeWidth={2.5} /> completo</span>
+                        ) : (
+                          <span className={`chip ${f.length === meses.length ? 'bad' : 'warn'}`}>falta{f.length > 1 ? 'm' : ''} {f.length}</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted" style={{ marginTop: 10 }}>Passe o mouse sobre um número para ver quais meses faltam.</p>
+      </Painel>
+
+      <Painel titulo="Outros alertas">
         {achados.length === 0 ? (
-          <div className="info">Nenhum problema encontrado no período.</div>
+          <div className="info">Nenhum número estranho encontrado no período.</div>
         ) : (
           <div className="tablewrap">
             <table>
               <thead>
-                <tr><th>Gravidade</th><th>Categoria</th><th>Unidade</th><th>Descrição</th></tr>
+                <tr><th>Urgência</th><th>Tipo</th><th>UBS</th><th>O que conferir</th></tr>
               </thead>
               <tbody>
                 {achados.map((a, i) => (
@@ -146,14 +175,14 @@ export function Qualidade() {
         )}
       </Painel>
 
-      <Painel titulo="Regras aplicadas">
+      <Painel titulo="O que o sistema confere">
         <div className="three">
-          <div className="callout"><b>Ausência</b><br />Cada indicador ativo deve ter um lançamento por unidade em cada mês fechado.</div>
-          <div className="callout"><b>Duplicidade</b><br />O banco impede dois lançamentos do mesmo indicador, unidade e mês.</div>
-          <div className="callout"><b>Consistência</b><br />Percentuais acima de 100%, variações acima de 50% e fórmulas desatualizadas são sinalizados.</div>
+          <div className="callout"><b>Faltas</b><br />Cada UBS deve lançar todos os indicadores em todo mês já encerrado.</div>
+          <div className="callout"><b>Repetição</b><br />O sistema não deixa lançar o mesmo indicador duas vezes no mesmo mês e UBS.</div>
+          <div className="callout"><b>Números estranhos</b><br />Percentual acima de 100% ou variação maior que 50% de um mês para o outro.</div>
         </div>
         <p className="muted" style={{ marginTop: 12 }}>
-          Corrija os dados em <Link to="/indicadores?aba=lancar">Lançamentos</Link> ou em <Link to="/ubs">Unidades e equipes</Link>. Cada alteração fica registrada na auditoria.
+          Corrija os números em <Link to="/indicadores?aba=lancar">Lançar dados</Link> e as equipes em <Link to="/ubs?aba=equipe">UBS</Link>. Toda alteração fica registrada no histórico.
         </p>
       </Painel>
     </>

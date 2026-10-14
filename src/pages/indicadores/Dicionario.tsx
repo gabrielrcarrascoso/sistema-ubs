@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Pencil, Plus } from 'lucide-react';
+import { ChevronRight, Download, Pencil, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, descreverFormula, NOME_TIPO } from '../../lib/indicadores';
 import type { Indicador, TipoIndicador } from '../../lib/types';
 import { baixarCSV, dataHoraBR, numOuNull, valorIndicador } from '../../lib/util';
-import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal } from '../../components/ui';
 
 const NOVO: Partial<Indicador> = {
   tipo: 'percentual',
@@ -97,30 +97,35 @@ export function Dicionario() {
         oficial. Toda mudança de fórmula gera uma nova versão; lançamentos antigos mantêm a versão com que foram calculados.
       </div>
 
-      {indicadores.map(i => (
-        <Painel
-          key={i.id}
-          titulo={`${i.codigo} · ${i.nome}`}
-          acoes={
-            <div className="actions">
-              {!i.ativo && <span className="chip neutral">Inativo</span>}
-              <span className="chip neutral">v{i.versao}</span>
-              <span className="chip">{NOME_TIPO[i.tipo]}</span>
-              {ehGestor && <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando(i)} />}
+      <div className="lista-definicoes">
+        {indicadores.map(i => (
+          <details key={i.id} className="definicao">
+            <summary>
+              <ChevronRight size={16} strokeWidth={2} className="seta" />
+              <span className="definicao-nome">
+                <b>{i.nome}</b>
+                <small>{i.codigo} · {NOME_TIPO[i.tipo]}{!i.ativo && ' · inativo'}</small>
+              </span>
+              <span className="chip neutral">
+                {i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta'}
+              </span>
+              {ehGestor && (
+                <span onClick={e => e.preventDefault()}>
+                  <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando(i)} />
+                </span>
+              )}
+            </summary>
+            <div className="definicao-corpo">
+              <p>{i.definicao}</p>
+              <div className="ficha-grid" style={{ marginTop: 12 }}>
+                <div className="ficha-item"><span>Como calcula</span>{descreverFormula(i)}</div>
+                <div className="ficha-item"><span>De onde vem o dado</span>{i.fonte_dados} · {i.periodicidade}</div>
+                <div className="ficha-item"><span>Versão da fórmula</span>v{i.versao}</div>
+              </div>
             </div>
-          }
-        >
-          <p>{i.definicao}</p>
-          <div className="three" style={{ marginTop: 14 }}>
-            <div className="callout"><b>Fórmula</b><br />{descreverFormula(i)}</div>
-            <div className="callout"><b>Fonte / origem</b><br />{i.fonte_dados} · {i.periodicidade}</div>
-            <div className="callout">
-              <b>Meta</b><br />
-              {i.meta !== null ? `${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta definida'}
-            </div>
-          </div>
-        </Painel>
-      ))}
+          </details>
+        ))}
+      </div>
 
       {editando && (
         <Modal titulo={editando.id ? `Editar ${editando.codigo}` : 'Novo indicador'} aoFechar={() => setEditando(null)}>

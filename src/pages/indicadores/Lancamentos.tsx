@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Pencil, Plus, Trash2, Upload } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { CalendarPlus, Download, Pencil, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos, calcularValor } from '../../lib/indicadores';
 import type { Indicador, Lancamento, Unidade } from '../../lib/types';
 import { baixarCSV, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../../lib/util';
-import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { LancarMes } from './LancarMes';
 
 interface Formulario {
   id?: string;
@@ -28,6 +30,9 @@ export function Lancamentos() {
   const [meses, setMeses] = useState(12);
   const [form, setForm] = useState<Formulario | null>(null);
   const [importando, setImportando] = useState(false);
+  const [params] = useSearchParams();
+  const [lancandoMes, setLancandoMes] = useState(params.get('novo') === '1'); // vindo do botão "Lançar o mês" do painel
+  const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const baseQ = useConsulta(async () => {
@@ -45,19 +50,6 @@ export function Lancamentos() {
   const unidadesEditaveis = unidades.filter(u => podeEditar(u.id));
   const indicadorDoForm = indicadores.find(i => i.id === form?.indicador_id);
 
-  function novo() {
-    const ind = indicadores[0];
-    setErro(null);
-    setForm({
-      indicador_id: ind?.id ?? '',
-      unidade_id: perfil?.unidade_id && podeEditar(perfil.unidade_id) ? perfil.unidade_id : unidadesEditaveis[0]?.id ?? '',
-      mes: mesAnterior(),
-      numerador: null,
-      denominador: null,
-      fonte: ind?.fonte_dados ?? '',
-      observacao: '',
-    });
-  }
 
   function editar(l: Lancamento) {
     setErro(null);
@@ -123,40 +115,40 @@ export function Lancamentos() {
   return (
     <>
       <Dica id="ind-lancar">
-        Todo mês, registre os números de cada indicador por UBS (tirados do e-SUS/PEC). Use <b><Plus size={16} strokeWidth={1.8} /> Novo lançamento</b> para um número, ou <b>Importar planilha</b> para vários de uma vez. O sistema calcula o resultado sozinho.
+        Todo mês, clique em <b>Lançar o mês</b>, escolha a UBS e preencha os números de cada indicador (tirados do
+        e-SUS/PEC). O resultado aparece na hora. Para muitos números de uma vez, use <b>Importar planilha</b>.
       </Dica>
-      <BarraAba acoes={
-          <>
-            <button className="btn" onClick={exportar}><Download size={16} strokeWidth={1.8} /> Exportar CSV</button>
-            {unidadesEditaveis.length > 0 && (
-              <>
-                <button className="btn" onClick={() => setImportando(true)}><Upload size={16} strokeWidth={1.8} /> Importar planilha</button>
-                <button className="btn primary" onClick={novo} disabled={indicadores.length === 0}><Plus size={16} strokeWidth={1.8} /> Novo lançamento</button>
-              </>
-            )}
-          </>
-        }
-      />
       <Erro mensagem={(!form && erro) || baseQ.erro || lancQ.erro} />
+      {aviso && <div className="info" style={{ marginBottom: 14 }}>{aviso}</div>}
 
       <div className="barra-filtros">
-          <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} aria-label="Unidade">
-            <option value="">Todas as unidades</option>
-            {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-          </select>
-          <select value={filtroIndicador} onChange={e => setFiltroIndicador(e.target.value)} aria-label="Indicador">
-            <option value="">Todos os indicadores</option>
-            {indicadores.map(i => <option key={i.id} value={i.id}>{i.codigo} · {i.nome}</option>)}
-          </select>
-          <select value={meses} onChange={e => setMeses(Number(e.target.value))} aria-label="Período">
-            <option value={6}>Últimos 6 meses</option>
-            <option value={12}>Últimos 12 meses</option>
-            <option value={24}>Últimos 24 meses</option>
-          </select>
-          <span className="chip neutral">{lancamentos.length} registro(s)</span>
+        <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} aria-label="Unidade">
+          <option value="">Todas as UBS</option>
+          {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        </select>
+        <select value={filtroIndicador} onChange={e => setFiltroIndicador(e.target.value)} aria-label="Indicador">
+          <option value="">Todos os indicadores</option>
+          {indicadores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+        </select>
+        <select value={meses} onChange={e => setMeses(Number(e.target.value))} aria-label="Período">
+          <option value={6}>Últimos 6 meses</option>
+          <option value={12}>Últimos 12 meses</option>
+          <option value={24}>Últimos 24 meses</option>
+        </select>
+        <div className="actions" style={{ marginLeft: 'auto' }}>
+          <button className="btn" onClick={exportar} title="Baixar os registros abaixo em planilha"><Download size={16} strokeWidth={1.8} /> Exportar</button>
+          {unidadesEditaveis.length > 0 && (
+            <>
+              <button className="btn" onClick={() => setImportando(true)}><Upload size={16} strokeWidth={1.8} /> Importar planilha</button>
+              <button className="btn primary" onClick={() => { setAviso(null); setLancandoMes(true); }} disabled={indicadores.length === 0}>
+                <CalendarPlus size={16} strokeWidth={1.8} /> Lançar o mês
+              </button>
+            </>
+          )}
         </div>
+      </div>
 
-      <Painel titulo="Registros">
+      <Painel titulo={`Registros (${lancamentos.length})`}>
         {lancQ.carregando ? (
           <Carregando />
         ) : (
@@ -171,7 +163,6 @@ export function Lancamentos() {
                   <th className="num">Denominador</th>
                   <th className="num">Valor</th>
                   <th>Fonte</th>
-                  <th>Fórmula</th>
                   <th></th>
                 </tr>
               </thead>
@@ -179,17 +170,17 @@ export function Lancamentos() {
                 {lancamentos.map(l => (
                   <tr key={l.id}>
                     <td>{mesAno(l.competencia)}</td>
-                    <td><b>{l.codigo}</b> <span className="muted">{l.indicador_nome}</span></td>
+                    <td><b>{l.indicador_nome}</b></td>
                     <td>{l.unidade_nome}</td>
                     <td className="num">{Number(l.numerador).toLocaleString('pt-BR')}</td>
                     <td className="num">{l.denominador === null ? '—' : Number(l.denominador).toLocaleString('pt-BR')}</td>
-                    <td className="num"><b>{valorIndicador(l.valor, l.unidade_medida)}</b></td>
-                    <td>{l.fonte}</td>
-                    <td>
-                      <span className={`chip ${l.versao_formula < l.versao_atual ? 'warn' : 'neutral'}`} title={l.versao_formula < l.versao_atual ? 'Calculado com uma versão anterior da fórmula' : 'Versão atual da fórmula'}>
-                        v{l.versao_formula}
-                      </span>
+                    <td className="num">
+                      <b>{valorIndicador(l.valor, l.unidade_medida)}</b>
+                      {l.versao_formula < l.versao_atual && (
+                        <span className="chip warn" style={{ marginLeft: 6 }} title="Calculado com uma versão anterior da fórmula">fórmula antiga</span>
+                      )}
                     </td>
+                    <td className="muted">{l.fonte}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {podeEditar(l.unidade_id) && (
                         <>
@@ -201,7 +192,7 @@ export function Lancamentos() {
                   </tr>
                 ))}
                 {lancamentos.length === 0 && (
-                  <tr><td colSpan={9} className="empty">Nenhum lançamento no período.</td></tr>
+                  <tr><td colSpan={8} className="empty">Nenhum número lançado neste período. Clique em “Lançar o mês”.</td></tr>
                 )}
               </tbody>
             </table>
@@ -262,6 +253,21 @@ export function Lancamentos() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {lancandoMes && unidadesEditaveis.length > 0 && (
+        <LancarMes
+          indicadores={indicadores}
+          unidades={unidadesEditaveis}
+          unidadeInicial={perfil?.unidade_id && podeEditar(perfil.unidade_id) ? perfil.unidade_id : unidadesEditaveis[0]?.id ?? ''}
+          mesInicial={mesAnterior()}
+          aoFechar={() => setLancandoMes(false)}
+          aoSalvar={n => {
+            setLancandoMes(false);
+            setAviso(`${n} indicador(es) salvo(s) com sucesso.`);
+            lancQ.recarregar();
+          }}
+        />
       )}
 
       {importando && (

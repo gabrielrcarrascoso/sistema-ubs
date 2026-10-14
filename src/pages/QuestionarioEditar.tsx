@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronUp, Eye, Lock, Pencil, Plus, Send, Trash2, Unlock } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, traduzErro } from '../lib/supabase';
 import { ok, useConsulta } from '../lib/hooks';
-import type { Pergunta, Questionario, StatusQuestionario, TipoCampo } from '../lib/types';
+import type { Pergunta, Questionario, StatusQuestionario, TipoCampo, ValorCampo } from '../lib/types';
 import { CampoDinamico, lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../components/CampoDinamico';
 import { BotaoIcone, Cabecalho, Campo, Carregando, Erro, Modal, Painel } from '../components/ui';
-import { CLASSE_STATUS, NOME_STATUS } from './Questionarios';
+import { NOME_STATUS } from './Questionarios';
 
 type Edicao = Partial<Pergunta> & { opcoesTexto?: string };
 
@@ -17,6 +17,8 @@ export function QuestionarioEditar() {
   const [editando, setEditando] = useState<Edicao | null>(null);
   const [cabecalho, setCabecalho] = useState<{ titulo: string; descricao: string } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [previa, setPrevia] = useState(false);
+  const [respostasPrevia, setRespostasPrevia] = useState<Record<string, ValorCampo>>({});
 
   const { dados, carregando, erro: erroQ, recarregar } = useConsulta(async () => {
     const [questionario, perguntas, respostas] = await Promise.all([
@@ -103,13 +105,32 @@ export function QuestionarioEditar() {
       />
       <Erro mensagem={(!editando && !cabecalho && erro) || erroQ} />
 
-      <Painel titulo="Situação" acoes={<span className={`chip ${CLASSE_STATUS[q.status]}`}>{NOME_STATUS[q.status]}</span>}>
-        <div className="actions">
-          {q.status !== 'aberto' && <button className="btn primary" onClick={() => mudarStatus('aberto')}>Abrir para respostas</button>}
-          {q.status === 'aberto' && <button className="btn" onClick={() => mudarStatus('encerrado')}>Encerrar</button>}
-          {q.status !== 'rascunho' && <button className="btn" onClick={() => mudarStatus('rascunho')}>Voltar a rascunho</button>}
-          <button className="btn" onClick={() => setCabecalho({ titulo: q.titulo, descricao: q.descricao ?? '' })}>Editar título</button>
-          <button className="btn danger" onClick={removerQuestionario}>Remover questionário</button>
+      {/* Etapas do questionário: rascunho → aberto → encerrado */}
+      <section className="panel">
+        <ol className="etapas">
+          {(['rascunho', 'aberto', 'encerrado'] as StatusQuestionario[]).map((st, i) => {
+            const ordem = { rascunho: 0, aberto: 1, encerrado: 2 };
+            const estado = ordem[st] < ordem[q.status] ? 'feita' : st === q.status ? 'atual' : '';
+            return (
+              <li key={st} className={`etapa ${estado}`}>
+                <span className="etapa-num">{estado === 'feita' ? <Check size={14} strokeWidth={2.6} /> : i + 1}</span>
+                <span>
+                  <b>{NOME_STATUS[st]}</b>
+                  <small>{{ rascunho: 'Só você vê. Monte as perguntas.', aberto: 'As UBS veem e respondem.', encerrado: 'Respostas guardadas, sem alterações.' }[st]}</small>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <div className="actions" style={{ marginTop: 16 }}>
+          {q.status === 'rascunho' && (
+            <button className="btn primary" onClick={() => mudarStatus('aberto')}><Send size={16} strokeWidth={1.8} /> Abrir para as UBS responderem</button>
+          )}
+          {q.status === 'aberto' && <button className="btn primary" onClick={() => mudarStatus('encerrado')}><Lock size={16} strokeWidth={1.8} /> Encerrar respostas</button>}
+          {q.status === 'encerrado' && <button className="btn" onClick={() => mudarStatus('aberto')}><Unlock size={16} strokeWidth={1.8} /> Reabrir</button>}
+          {q.status === 'aberto' && <button className="btn" onClick={() => mudarStatus('rascunho')}>Voltar a rascunho</button>}
+          <button className="btn" onClick={() => setPrevia(true)} disabled={!perguntas.length}><Eye size={16} strokeWidth={1.8} /> Ver como a UBS vê</button>
+          <button className="btn" onClick={() => setCabecalho({ titulo: q.titulo, descricao: q.descricao ?? '' })}><Pencil size={16} strokeWidth={1.8} /> Título e descrição</button>
         </div>
         {totalRespostas > 0 && (
           <div className="alert" style={{ marginTop: 14 }}>
@@ -117,7 +138,7 @@ export function QuestionarioEditar() {
             existentes — isso confunde a comparação entre UBS.
           </div>
         )}
-      </Painel>
+      </section>
 
       <Painel titulo={`Perguntas (${perguntas.length})`} acoes={<button className="btn small primary" onClick={() => setEditando({ tipo: 'texto' })}><Plus size={16} strokeWidth={1.8} /> Adicionar pergunta</button>}>
         {perguntas.length === 0 && <p className="empty">Nenhuma pergunta ainda.</p>}
@@ -144,6 +165,29 @@ export function QuestionarioEditar() {
           </div>
         ))}
       </Painel>
+
+      <div className="zona-perigo">
+        <span>Não precisa mais deste questionário?</span>
+        <button className="btn danger small" onClick={removerQuestionario}><Trash2 size={14} strokeWidth={1.8} /> Remover questionário</button>
+      </div>
+
+      {previa && (
+        <Modal titulo={`Prévia · ${q.titulo}`} aoFechar={() => setPrevia(false)}>
+          <p className="muted" style={{ marginBottom: 12 }}>É assim que o administrador da UBS verá as perguntas. Nada é salvo aqui.</p>
+          {perguntas.map((p, i) => (
+            <div className="pergunta" key={p.id}>
+              <span className="label" style={{ fontSize: 14, color: 'var(--text)' }}>
+                <span className="num">{i + 1}.</span>{p.enunciado}{p.obrigatoria && <span style={{ color: 'var(--danger)' }}> *</span>}
+              </span>
+              {p.ajuda && <span className="hint">{p.ajuda}</span>}
+              <div style={{ marginTop: 6 }}>
+                <CampoDinamico id={`previa-${p.id}`} tipo={p.tipo} opcoes={p.opcoes} valor={respostasPrevia[p.id]} aoMudar={v => setRespostasPrevia({ ...respostasPrevia, [p.id]: v })} />
+              </div>
+            </div>
+          ))}
+          <div className="actions"><button className="btn" onClick={() => setPrevia(false)}>Fechar prévia</button></div>
+        </Modal>
+      )}
 
       {editando && (
         <Modal titulo={editando.id ? 'Editar pergunta' : 'Nova pergunta'} aoFechar={() => setEditando(null)}>

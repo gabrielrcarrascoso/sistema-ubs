@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Download, Plus, Printer, Trash2 } from 'lucide-react';
+import { ArrowLeft, BarChart3, Columns3, Download, Inbox, List, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -7,8 +7,14 @@ import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
 import type { Aplicacao, Pergunta, Questionario, Unidade } from '../lib/types';
 import { baixarCSV, dataBR, numeroBR } from '../lib/util';
 import { mostrarValor, vazio } from '../components/CampoDinamico';
-import { BotaoIcone, Cabecalho, Carregando, Cartao, Erro, Painel } from '../components/ui';
+import { BarraDeAbas, BotaoIcone, Cabecalho, Carregando, type DefAba, Erro, EstadoVazio, Painel, useAba } from '../components/ui';
 import { CLASSE_STATUS, NOME_STATUS } from './Questionarios';
+
+const VISOES: DefAba[] = [
+  { id: 'resumo', rotulo: 'Resumo por pergunta', icone: BarChart3 },
+  { id: 'comparar', rotulo: 'Comparar UBS', icone: Columns3 },
+  { id: 'respostas', rotulo: 'Respostas individuais', icone: List },
+];
 
 // Resultados consolidados do questionário (por pergunta e por UBS)
 export function QuestionarioResultados() {
@@ -16,6 +22,7 @@ export function QuestionarioResultados() {
   const { ehGestor, podeEditar } = useAuth();
   const [filtroUnidade, setFiltroUnidade] = useState('');
   const [erro, setErro] = useState<string | null>(null);
+  const [visao, setVisao] = useAba(VISOES, 'resumo');
 
   const { dados, carregando, erro: erroQ, recarregar } = useConsulta(async () => {
     const [questionario, perguntas, aplicacoes, unidades] = await Promise.all([
@@ -33,6 +40,8 @@ export function QuestionarioResultados() {
   const aplicacoes = dados.aplicacoes.filter(a => !filtroUnidade || a.unidade_id === filtroUnidade);
   const nomeUBS = (uid: string) => unidades.find(u => u.id === uid)?.nome ?? 'UBS desativada';
   const ubsComResposta = new Set(dados.aplicacoes.map(a => a.unidade_id));
+  // resposta mais recente de cada UBS (para a comparação lado a lado)
+  const ultimaPorUBS = [...new Map([...dados.aplicacoes].sort((a, b) => a.updated_at.localeCompare(b.updated_at)).map(a => [a.unidade_id, a])).values()];
   const pendentes = unidades.filter((u: Unidade) => !ubsComResposta.has(u.id));
 
   async function remover(a: Aplicacao) {
@@ -72,40 +81,80 @@ export function QuestionarioResultados() {
       />
       <Erro mensagem={erro || erroQ} />
 
-      <div className="cards">
-        <Cartao titulo="Situação" valor={<span className={`chip ${CLASSE_STATUS[q.status]}`}>{NOME_STATUS[q.status]}</span>} />
-        <Cartao titulo="Respostas" valor={dados.aplicacoes.length} nota={ehGestor ? 'De todas as UBS' : 'Da sua UBS'} />
-        <Cartao titulo="UBS que responderam" valor={`${ubsComResposta.size}/${unidades.length}`} />
-        <Cartao titulo="Perguntas" valor={perguntas.length} />
+      <div className="resumo-linha">
+        <span className={`chip ${CLASSE_STATUS[q.status]}`}>{NOME_STATUS[q.status]}</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div className="bar-label"><span>UBS que responderam</span><b>{ubsComResposta.size} de {unidades.length}</b></div>
+          <div className="progresso"><div style={{ width: `${unidades.length ? (ubsComResposta.size / unidades.length) * 100 : 0}%` }} /></div>
+        </div>
       </div>
 
-      {ehGestor && pendentes.length > 0 && (
+      {ehGestor && pendentes.length > 0 && q.status !== 'rascunho' && (
         <div className="alert" style={{ marginBottom: 20 }}>
           Ainda sem resposta: {pendentes.map(u => u.nome).join(', ')}.
         </div>
       )}
 
-      <Painel
-        titulo="Resumo por pergunta"
-        acoes={
-          ehGestor && (
-            <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} aria-label="Filtrar UBS">
-              <option value="">Todas as UBS</option>
-              {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-            </select>
-          )
-        }
-      >
-        {aplicacoes.length === 0 && <p className="empty">Nenhuma resposta ainda.</p>}
-        {aplicacoes.length > 0 &&
-          perguntas.map((p, i) => (
-            <div className="resultado" key={p.id}>
-              <b><span className="num" style={{ color: '#147d79' }}>{i + 1}.</span> {p.enunciado}</b>
-              <ResumoPergunta pergunta={p} aplicacoes={aplicacoes} nomeUBS={nomeUBS} />
-            </div>
-          ))}
-      </Painel>
+      {dados.aplicacoes.length === 0 ? (
+        <EstadoVazio icone={Inbox} titulo="Nenhuma resposta ainda">
+          {q.status === 'rascunho'
+            ? 'Este questionário ainda é um rascunho. Abra-o para as UBS começarem a responder.'
+            : 'Assim que as UBS responderem, os resultados aparecem aqui automaticamente.'}
+        </EstadoVazio>
+      ) : (
+        <>
+          <BarraDeAbas abas={VISOES} atual={visao} aoMudar={setVisao} />
 
+          {visao === 'resumo' && (
+            <Painel
+              titulo="Resumo por pergunta"
+              acoes={
+                ehGestor && (
+                  <select value={filtroUnidade} onChange={e => setFiltroUnidade(e.target.value)} aria-label="Filtrar UBS" className="select-simples">
+                    <option value="">Todas as UBS</option>
+                    {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                  </select>
+                )
+              }
+            >
+              {aplicacoes.length === 0 && <p className="empty">Nenhuma resposta desta UBS.</p>}
+              {aplicacoes.length > 0 &&
+                perguntas.map((p, i) => (
+                  <div className="resultado" key={p.id}>
+                    <b><span className="num" style={{ color: '#147d79' }}>{i + 1}.</span> {p.enunciado}</b>
+                    <ResumoPergunta pergunta={p} aplicacoes={aplicacoes} nomeUBS={nomeUBS} />
+                  </div>
+                ))}
+            </Painel>
+          )}
+
+          {visao === 'comparar' && (
+            <Painel titulo="Comparar UBS lado a lado">
+              <div className="tablewrap">
+                <table className="tabela-comparar">
+                  <thead>
+                    <tr>
+                      <th>Pergunta</th>
+                      {ultimaPorUBS.map(a => <th key={a.id}>{nomeUBS(a.unidade_id)}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perguntas.map((p, i) => (
+                      <tr key={p.id}>
+                        <td><span className="num" style={{ color: '#147d79', fontWeight: 800 }}>{i + 1}.</span> {p.enunciado}</td>
+                        {ultimaPorUBS.map(a => (
+                          <td key={a.id}>{vazio(a.respostas[p.id]) ? <span className="none">—</span> : mostrarValor(p.tipo, a.respostas[p.id])}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="muted" style={{ marginTop: 10 }}>Se uma UBS respondeu mais de uma vez, aparece a resposta mais recente.</p>
+            </Painel>
+          )}
+
+          {visao === 'respostas' && (
       <Painel titulo="Respostas individuais">
         <div className="tablewrap">
           <table>
@@ -121,8 +170,8 @@ export function QuestionarioResultados() {
                   <td className="num">{perguntas.filter(p => !vazio(a.respostas[p.id])).length}/{perguntas.length}</td>
                   <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                     {podeEditar(a.unidade_id) && q.status === 'aberto' && (
-                      <Link className="btn small" to={`/questionarios/${q.id}/responder?aplicacao=${a.id}`}>Editar</Link>
-                    )}{' '}
+                      <Link className="btn icone" title="Corrigir resposta" aria-label="Corrigir resposta" to={`/questionarios/${q.id}/responder?aplicacao=${a.id}`}><Pencil size={15} strokeWidth={1.9} /></Link>
+                    )}
                     {podeEditar(a.unidade_id) && <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(a)} />}
                   </td>
                 </tr>
@@ -132,6 +181,9 @@ export function QuestionarioResultados() {
           </table>
         </div>
       </Painel>
+          )}
+        </>
+      )}
     </>
   );
 }

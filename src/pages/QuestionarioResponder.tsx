@@ -25,6 +25,7 @@ export function QuestionarioResponder() {
   const [respostas, setRespostas] = useState<Record<string, ValorCampo>>({});
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [destacar, setDestacar] = useState<Set<string>>(new Set());
 
   const { dados, carregando, erro: erroQ } = useConsulta(async () => {
     const [questionario, perguntas, unidades, aplicacao] = await Promise.all([
@@ -74,8 +75,13 @@ export function QuestionarioResponder() {
   async function salvar(e: FormEvent) {
     e.preventDefault();
     setErro(null);
-    const faltando = perguntas.map((p, i) => (p.obrigatoria && vazio(respostas[p.id]) ? i + 1 : null)).filter(Boolean);
-    if (faltando.length) return setErro(`Responda as perguntas obrigatórias: nº ${faltando.join(', ')}.`);
+    const faltando = perguntas.filter(p => p.obrigatoria && vazio(respostas[p.id]));
+    setDestacar(new Set(faltando.map(p => p.id)));
+    if (faltando.length) {
+      // leva a pessoa direto até a primeira pergunta que falta
+      document.getElementById(`pergunta-${faltando[0].id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return setErro(`Faltam ${faltando.length} pergunta(s) obrigatória(s), destacadas em vermelho.`);
+    }
     // guarda só as respostas das perguntas que existem
     const limpas = Object.fromEntries(perguntas.filter(p => !vazio(respostas[p.id])).map(p => [p.id, respostas[p.id]]));
     const registro = {
@@ -104,7 +110,12 @@ export function QuestionarioResponder() {
       />
 
       <form onSubmit={salvar}>
-        <Painel titulo={aplicacaoId ? 'Editando resposta' : 'Nova resposta'} acoes={<span className="chip neutral">{respondidas} de {perguntas.length} respondidas</span>}>
+        <div className="progresso-fixo">
+          <span>{respondidas} de {perguntas.length} respondidas</span>
+          <div className="progresso"><div style={{ width: `${perguntas.length ? (respondidas / perguntas.length) * 100 : 0}%` }} /></div>
+        </div>
+
+        <Painel titulo={aplicacaoId ? 'Corrigindo a resposta' : 'Sobre esta resposta'}>
           <div className="form-grid">
             <Campo rotulo="UBS" className="wide">
               <select required value={unidadeId} onChange={e => setUnidadeId(e.target.value)} disabled={!!aplicacaoId}>
@@ -123,7 +134,7 @@ export function QuestionarioResponder() {
 
         <Painel titulo="Perguntas">
           {perguntas.map((p, i) => (
-            <div className="pergunta" key={p.id}>
+            <div className={`pergunta ${destacar.has(p.id) && vazio(respostas[p.id]) ? 'faltando' : ''}`} key={p.id} id={`pergunta-${p.id}`}>
               <label className="field">
                 <span className="label" style={{ fontSize: 14, color: 'var(--text)' }}>
                   <span className="num">{i + 1}.</span>

@@ -83,3 +83,16 @@ export function atingiuMeta(valor: number | null, meta: number | null, sentido: 
   if (valor === null || meta === null) return null;
   return sentido === 'maior' ? valor >= meta : valor <= meta;
 }
+
+/**
+ * Lê um número digitado no formato brasileiro: "1.240" = 1240 · "92,5" = 92.5 · "1.240,5" = 1240.5
+ * Campo vazio ou inválido → null (nunca vira zero sem querer).
+ */
+export function lerNumeroBR(texto: string): number | null {
+  let t = texto.trim().replace(/\s/g, '');
+  if (t === '') return null;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}

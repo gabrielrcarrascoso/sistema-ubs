@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { BarChart3, CalendarPlus, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
@@ -7,7 +7,7 @@ import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from 
 import type { Lancamento } from '../../lib/types';
 import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../../lib/util';
 import { GraficoBarras } from '../../components/GraficoBarras';
-import { Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
+import { Dica, Carregando, Cartao, Erro, EstadoVazio, Painel } from '../../components/ui';
 
 export function PainelIndicadores() {
   const { perfil } = useAuth();
@@ -53,6 +53,27 @@ export function PainelIndicadores() {
   const porUnidade = (indId: string, uniId: string): Lancamento | undefined =>
     lancamentos.find(l => l.indicador_id === indId && l.unidade_id === uniId && ultimoMesComDado && l.competencia.startsWith(ultimoMesComDado.slice(0, 7)));
 
+  const podeLancar = perfil?.papel !== 'profissional';
+
+  // Ainda sem nenhum número: em vez de um painel cheio de "—", mostra como começar
+  if (lancamentos.length === 0) {
+    return (
+      <EstadoVazio icone={BarChart3} titulo="O painel aparece assim que houver números">
+        <ol className="passos">
+          <li><b>Confira as definições</b> dos indicadores na aba <Link to="/indicadores?aba=definicoes">Definições</Link>.</li>
+          <li><b>Lance os números do mês</b> de cada UBS, tirados do e-SUS/PEC.</li>
+          <li><b>Volte aqui</b> para ver gráficos, metas atingidas e a comparação entre as UBS.</li>
+        </ol>
+        {podeLancar && (
+          <div className="actions" style={{ justifyContent: 'center', marginTop: 18 }}>
+            <Link to="/indicadores?aba=lancar&novo=1" className="btn primary"><CalendarPlus size={16} strokeWidth={1.8} /> Lançar o primeiro mês</Link>
+            <Link to="/indicadores?aba=lancar" className="btn"><Upload size={16} strokeWidth={1.8} /> Importar planilha</Link>
+          </div>
+        )}
+      </EstadoVazio>
+    );
+  }
+
   return (
     <>
       <Dica id="ind-painel">
@@ -60,7 +81,7 @@ export function PainelIndicadores() {
       </Dica>
       <div className="barra-filtros">
           <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} aria-label="Unidade">
-            <option value="">Todas as unidades (consolidado)</option>
+            <option value="">Todas as UBS juntas</option>
             {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </select>
           <select value={qtdMeses} onChange={e => setQtdMeses(Number(e.target.value))} aria-label="Período">
@@ -68,19 +89,12 @@ export function PainelIndicadores() {
             <option value={12}>Últimos 12 meses</option>
           </select>
           {ultimoMesComDado && <span className="chip neutral">Último mês com dados: {mesAno(ultimoMesComDado)}</span>}
-          {perfil?.papel !== 'profissional' && (
-            <Link to="/indicadores?aba=lancar" className="btn primary" style={{ marginLeft: 'auto' }}>
-              <Plus size={16} strokeWidth={1.8} /> Lançar dados
+          {podeLancar && (
+            <Link to="/indicadores?aba=lancar&novo=1" className="btn primary" style={{ marginLeft: 'auto' }}>
+              <CalendarPlus size={16} strokeWidth={1.8} /> Lançar o mês
             </Link>
           )}
         </div>
-
-      {lancamentos.length === 0 && (
-        <div className="alert" style={{ marginBottom: 20 }}>
-          Ainda não há lançamentos. Registre os números mensais em <Link to="/indicadores?aba=lancar">Lançamentos</Link> (um a um ou
-          importando uma planilha) para o painel ganhar vida.
-        </div>
-      )}
 
       <div className="cards">
         <Cartao
@@ -106,7 +120,7 @@ export function PainelIndicadores() {
           titulo="Evolução por período"
           acoes={
             <select value={indSelecionado.id} onChange={e => setIndicadorId(e.target.value)} aria-label="Indicador do gráfico">
-              {indicadores.map(i => <option key={i.id} value={i.id}>{i.codigo} · {i.nome}</option>)}
+              {indicadores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </select>
           }
         >
@@ -127,7 +141,7 @@ export function PainelIndicadores() {
           {resumo.map(({ indicador: i, valor, ok }) => (
             <div className="item row-flex" key={i.id}>
               <div>
-                <b>{i.codigo}</b> {i.nome}
+                <b>{i.nome}</b>
                 <p>{i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta definida'}</p>
               </div>
               <span className={`chip ${ok === null ? 'neutral' : ok ? '' : 'bad'}`}>{valorIndicador(valor, i.unidade_medida)}</span>
@@ -147,7 +161,7 @@ export function PainelIndicadores() {
               <tbody>
                 {indicadores.map(i => (
                   <tr key={i.id}>
-                    <td><b>{i.codigo}</b></td>
+                    <td><b>{i.nome}</b></td>
                     {unidades.map(u => {
                       const l = porUnidade(i.id, u.id);
                       const ok = l ? atingiuMeta(l.valor, i.meta, i.sentido_meta) : null;

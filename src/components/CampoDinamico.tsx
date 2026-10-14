@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import type { TipoCampo, ValorCampo } from '../lib/types';
 import { dataBR, numeroBR } from '../lib/util';
 
@@ -68,56 +69,89 @@ export function CampoDinamico({
 
     case 'sim_nao':
       return (
-        <select id={id} required={obrigatorio} value={valor === true ? 'sim' : valor === false ? 'nao' : ''} onChange={e => aoMudar(e.target.value === '' ? null : e.target.value === 'sim')}>
-          <option value="">Selecione</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
+        <Pilulas
+          opcoes={['Sim', 'Não']}
+          marcado={o => (o === 'Sim' ? valor === true : valor === false)}
+          aoClicar={o => {
+            const v = o === 'Sim';
+            aoMudar(valor === v ? null : v); // clicar de novo desmarca
+          }}
+        />
       );
 
     case 'escolha_unica':
-      return (
-        <select id={id} required={obrigatorio} value={(valor as string) ?? ''} onChange={e => aoMudar(e.target.value || null)}>
-          <option value="">Selecione</option>
-          {opcoes.map(o => <option key={o}>{o}</option>)}
-        </select>
-      );
+      // até 6 opções: botões; mais que isso: lista suspensa
+      if (opcoes.length > 6) {
+        return (
+          <select id={id} required={obrigatorio} value={(valor as string) ?? ''} onChange={e => aoMudar(e.target.value || null)}>
+            <option value="">Selecione</option>
+            {opcoes.map(o => <option key={o}>{o}</option>)}
+          </select>
+        );
+      }
+      return <Pilulas opcoes={opcoes} marcado={o => valor === o} aoClicar={o => aoMudar(valor === o ? null : o)} />;
 
     case 'multipla_escolha': {
       const marcados = Array.isArray(valor) ? valor : [];
       return (
-        <div className="opcoes">
-          {opcoes.map(o => (
-            <label key={o} className="opcao">
-              <input
-                type="checkbox"
-                checked={marcados.includes(o)}
-                onChange={e => aoMudar(e.target.checked ? [...marcados, o] : marcados.filter(x => x !== o))}
-              />{' '}
-              {o}
-            </label>
-          ))}
-        </div>
+        <Pilulas
+          multipla
+          opcoes={opcoes}
+          marcado={o => marcados.includes(o)}
+          aoClicar={o => aoMudar(marcados.includes(o) ? marcados.filter(x => x !== o) : [...marcados, o])}
+        />
       );
     }
 
     case 'escala':
       return (
-        <div className="opcoes">
-          {[1, 2, 3, 4, 5].map(n => (
-            <label key={n} className="opcao">
-              <input type="radio" name={id} required={obrigatorio} checked={valor === n} onChange={() => aoMudar(n)} /> {n}
-            </label>
-          ))}
-          {!vazio(valor) && (
-            <button type="button" className="btn link" onClick={() => aoMudar(null)}>limpar</button>
-          )}
-        </div>
+        <Pilulas
+          opcoes={['1', '2', '3', '4', '5']}
+          marcado={o => valor === Number(o)}
+          aoClicar={o => aoMudar(valor === Number(o) ? null : Number(o))}
+          quadradas
+        />
       );
 
     default:
       return <input id={id} required={obrigatorio} value={(valor as string) ?? ''} onChange={e => aoMudar(e.target.value)} />;
   }
+}
+
+/** Botões de escolha, grandes o bastante para tocar no celular */
+function Pilulas({
+  opcoes,
+  marcado,
+  aoClicar,
+  multipla,
+  quadradas,
+}: {
+  opcoes: string[];
+  marcado: (o: string) => boolean;
+  aoClicar: (o: string) => void;
+  multipla?: boolean;
+  quadradas?: boolean;
+}) {
+  return (
+    <div className={`pilulas ${quadradas ? 'quadradas' : ''}`} role={multipla ? 'group' : 'radiogroup'}>
+      {opcoes.map(o => {
+        const ativo = marcado(o);
+        return (
+          <button
+            key={o}
+            type="button"
+            role={multipla ? 'checkbox' : 'radio'}
+            aria-checked={ativo}
+            className={`pilula ${ativo ? 'ativa' : ''}`}
+            onClick={() => aoClicar(o)}
+          >
+            {multipla && <Check size={14} strokeWidth={2.4} className="pilula-check" />}
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /** Converte o texto "uma opção por linha" em lista, sem repetidas */

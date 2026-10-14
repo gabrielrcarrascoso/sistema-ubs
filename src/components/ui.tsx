@@ -68,6 +68,25 @@ export function BotaoIcone({
   );
 }
 
+/** Tela vazia amigável: ícone, explicação e o que fazer a seguir */
+export function EstadoVazio({
+  icone: Icone,
+  titulo,
+  children,
+}: {
+  icone: LucideIcon;
+  titulo: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="estado-vazio">
+      <span className="estado-vazio-icone"><Icone size={28} strokeWidth={1.5} /></span>
+      <h2>{titulo}</h2>
+      <div className="estado-vazio-texto">{children}</div>
+    </div>
+  );
+}
+
 export function Carregando() {
   return <div className="loading">Carregando…</div>;
 }
