@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { Download, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
@@ -23,6 +24,7 @@ export function calcularCapacidade(c: Formulario) {
 
 /** Visitas de campo e cálculo de capacidade de uma UBS */
 export function AbaColetas({ unidade }: { unidade: Unidade }) {
+  const confirmar = useConfirmar();
   const { perfil, podeEditar } = useAuth();
   const unidadeId = unidade.id;
   const [form, setForm] = useState<Formulario>({ responsavel: perfil?.nome ?? '' });
@@ -85,7 +87,7 @@ export function AbaColetas({ unidade }: { unidade: Unidade }) {
   }
 
   async function remover(c: ColetaT) {
-    if (!confirm('Remover este registro de coleta?')) return;
+    if (!(await confirmar('Remover o registro desta visita?', { perigo: true }))) return;
     const { error } = await supabase.from('coletas').delete().eq('id', c.id);
     if (error) return setErro(traduzErro(error));
     coletasQ.recarregar();

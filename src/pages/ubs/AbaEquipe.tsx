@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -8,6 +9,7 @@ import { BotaoIcone, Campo, Carregando, Dica, Erro, Modal, NivelTag, Painel } fr
 
 /** Equipe da UBS (cargos e quantidades) + matriz de quem faz cada atividade */
 export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel: boolean }) {
+  const confirmar = useConfirmar();
   const [editando, setEditando] = useState<Partial<Equipe> | null>(null);
   const [busca, setBusca] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
   }
 
   async function remover(eq: Equipe) {
-    if (!confirm(`Remover "${eq.cargo}" desta UBS? A linha dele na matriz também será removida.`)) return;
+    if (!(await confirmar(`Remover "${eq.cargo}" desta UBS? A linha dele na matriz também será removida.`, { perigo: true }))) return;
     const { error } = await supabase.from('equipes').delete().eq('id', eq.id);
     if (error) return setErro(traduzErro(error));
     recarregar();

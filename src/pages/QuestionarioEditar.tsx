@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../components/Confirmacao';
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Eye, Lock, Pencil, Plus, Send, Trash2, Unlock } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, traduzErro } from '../lib/supabase';
@@ -12,6 +13,7 @@ type Edicao = Partial<Pergunta> & { opcoesTexto?: string };
 
 // Editor do questionário (somente administrador geral)
 export function QuestionarioEditar() {
+  const confirmar = useConfirmar();
   const { id = '' } = useParams();
   const navegar = useNavigate();
   const [editando, setEditando] = useState<Edicao | null>(null);
@@ -51,7 +53,7 @@ export function QuestionarioEditar() {
       encerrado: 'Encerrar? As respostas ficam guardadas, mas ninguém pode responder ou alterar mais.',
       rascunho: 'Voltar para rascunho? O questionário some para as UBS até ser aberto de novo.',
     };
-    if (confirm(avisos[status])) await executar(supabase.from('questionarios').update({ status }).eq('id', q.id));
+    if (await confirmar(avisos[status], { botao: { aberto: 'Abrir', encerrado: 'Encerrar', rascunho: 'Voltar a rascunho' }[status] })) await executar(supabase.from('questionarios').update({ status }).eq('id', q.id));
   }
 
   async function salvarPergunta(e: FormEvent) {
@@ -87,7 +89,7 @@ export function QuestionarioEditar() {
     const aviso = totalRespostas
       ? `Este questionário tem ${totalRespostas} resposta(s). Remover apaga TUDO, inclusive as respostas. Tem certeza?`
       : 'Remover este questionário?';
-    if (!confirm(aviso)) return;
+    if (!(await confirmar(aviso, { perigo: true }))) return;
     if (await executar(supabase.from('questionarios').delete().eq('id', q.id))) navegar('/questionarios');
   }
 
@@ -159,7 +161,7 @@ export function QuestionarioEditar() {
                 <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>
                 <button className="btn small" disabled={i === perguntas.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>
                 <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setEditando({ ...p, opcoesTexto: p.opcoes.join('\n') })} />
-                <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm('Remover esta pergunta? Respostas já dadas a ela deixam de aparecer.') && executar(supabase.from('perguntas').delete().eq('id', p.id))} />
+                <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={async () => (await confirmar('Remover esta pergunta? Respostas já dadas a ela deixam de aparecer.', { perigo: true })) && executar(supabase.from('perguntas').delete().eq('id', p.id))} />
               </div>
             </div>
           </div>

@@ -395,3 +395,12 @@ td.num, th.num { text-align: right; }
 .situacao.abaixo .situacao-valor { color: #a3302b; }
 .situacao-meta { font-size: 11.5px; color: var(--muted); }
 .two > * { min-width: 0; }
+
+/* ---------- Janela de confirmação ---------- */
+.confirmacao { display: flex; gap: 14px; align-items: flex-start; }
+.confirmacao p { color: var(--text); font-size: 14.5px; line-height: 1.55; padding-top: 6px; }
+.confirmacao-icone { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #eaf5f3; color: var(--primary); flex-shrink: 0; }
+.confirmacao-icone.perigo { background: #fdecea; color: var(--danger); }
+.btn.perigo-cheio { background: var(--danger); border-color: var(--danger); color: white; }
+.btn.perigo-cheio:hover:not(:disabled) { background: #96241f; }
+.modal-bg + .modal-bg { background: #0d1f3333; }

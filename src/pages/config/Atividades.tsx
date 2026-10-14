@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar, usePerguntar } from '../../components/Confirmacao';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -7,6 +8,8 @@ import { BotaoIcone, BarraAba, Carregando, Dica, Erro, Painel } from '../../comp
 
 /** Lista de atividades que aparecem como colunas na matriz de todas as UBS */
 export function Atividades() {
+  const confirmar = useConfirmar();
+  const perguntar = usePerguntar();
   const { dados, carregando, erro: erroQ, recarregar } = useConsulta(
     async () => ok<Atividade[]>(await supabase.from('atividades').select('*').order('ordem')),
     [],
@@ -61,11 +64,11 @@ export function Atividades() {
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button className="btn small" disabled={i === 0} onClick={() => mover(i, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>{' '}
                     <button className="btn small" disabled={i === atividades.length - 1} onClick={() => mover(i, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>{' '}
-                    <BotaoIcone icone={Pencil} titulo="Renomear" aoClicar={() => {
-                        const nome = prompt('Novo nome da atividade:', a.nome);
+                    <BotaoIcone icone={Pencil} titulo="Renomear" aoClicar={async () => {
+                        const nome = await perguntar('Novo nome da atividade', a.nome);
                         if (nome?.trim()) executar(supabase.from('atividades').update({ nome: nome.trim() }).eq('id', a.id));
                       }} />{' '}
-                    <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm(`Remover "${a.nome}" da matriz de TODAS as UBS?`) && executar(supabase.from('atividades').delete().eq('id', a.id))} />
+                    <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={async () => (await confirmar(`Remover "${a.nome}" da matriz de TODAS as UBS?`, { perigo: true })) && executar(supabase.from('atividades').delete().eq('id', a.id))} />
                   </td>
                 </tr>
               ))}

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { Check, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
@@ -21,6 +22,7 @@ const ehAlerta = (s: string | null) => /Divergente|Inconsistente|Lacuna/i.test(s
 
 /** Restrições operacionais e pendências de coleta de uma UBS */
 export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidades: Unidade[] }) {
+  const confirmar = useConfirmar();
   const { podeEditar, ehGestor } = useAuth();
   const unidadeId = unidade.id;
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
@@ -133,7 +135,7 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
                     {editavel && (
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setRestricao(r)} />
-                        <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => confirm('Remover esta restrição?') && executar(supabase.from('restricoes').delete().eq('id', r.id))} />
+                        <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={async () => (await confirmar('Remover esta restrição?', { perigo: true })) && executar(supabase.from('restricoes').delete().eq('id', r.id))} />
                       </td>
                     )}
                   </tr>
@@ -247,8 +249,8 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
                   type="button"
                   className="btn danger"
                   style={{ marginRight: 'auto' }}
-                  onClick={() =>
-                    confirm('Remover esta pendência?') &&
+                  onClick={async () =>
+                    (await confirmar('Remover esta pendência?', { perigo: true })) &&
                     executar(supabase.from('pendencias').delete().eq('id', pendencia.id!), () => setPendencia(null))
                   }
                 >

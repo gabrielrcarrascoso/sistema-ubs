@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirmar } from '../components/Confirmacao';
 import { ArrowLeft, BarChart3, Columns3, Download, Inbox, List, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
@@ -18,6 +19,7 @@ const VISOES: DefAba[] = [
 
 // Resultados consolidados do questionário (por pergunta e por UBS)
 export function QuestionarioResultados() {
+  const confirmar = useConfirmar();
   const { id = '' } = useParams();
   const { ehGestor, podeEditar } = useAuth();
   const [filtroUnidade, setFiltroUnidade] = useState('');
@@ -45,7 +47,7 @@ export function QuestionarioResultados() {
   const pendentes = unidades.filter((u: Unidade) => !ubsComResposta.has(u.id));
 
   async function remover(a: Aplicacao) {
-    if (!confirm(`Remover a resposta de ${nomeUBS(a.unidade_id)} (${dataBR(a.data_aplicacao)})?`)) return;
+    if (!(await confirmar(`Remover a resposta de ${nomeUBS(a.unidade_id)} (${dataBR(a.data_aplicacao)})?`, { perigo: true }))) return;
     const { error } = await supabase.from('aplicacoes').delete().eq('id', a.id);
     if (error) return setErro(traduzErro(error));
     recarregar();

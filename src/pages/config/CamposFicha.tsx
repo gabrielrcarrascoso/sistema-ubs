@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -23,6 +24,7 @@ type Edicao = Partial<CampoFicha> & { opcoesTexto?: string };
 
 // Tela do administrador geral: define QUAIS informações a ficha de toda UBS tem
 export function CamposFicha() {
+  const confirmar = useConfirmar();
   const camposQ = useConsulta(() => buscarCamposFicha(false), []);
   const [editando, setEditando] = useState<Edicao | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export function CamposFicha() {
   }
 
   async function remover(c: CampoFicha) {
-    if (!confirm(`Remover o campo "${c.nome}"?\n\nOs valores já preenchidos nas UBS deixam de aparecer. Se quiser só escondê-lo, use "Desativar".`)) return;
+    if (!(await confirmar(`Remover o campo "${c.nome}"? Os valores já preenchidos nas UBS deixam de aparecer. Se quiser só escondê-lo, use "Desativar".`, { perigo: true }))) return;
     const { error } = await supabase.from('campos_ficha').delete().eq('id', c.id);
     if (error) return setErro(traduzErro(error));
     camposQ.recarregar();
@@ -175,6 +177,7 @@ export function CamposFicha() {
 
 /** UBS desativadas pelo administrador geral, com opção de reativar */
 function UbsDesativadas() {
+  const confirmar = useConfirmar();
   const [erro, setErro] = useState<string | null>(null);
   const { dados, recarregar } = useConsulta(
     async () => ok<Unidade[]>(await supabase.from('unidades').select('*').eq('ativa', false).order('nome')),
@@ -183,7 +186,7 @@ function UbsDesativadas() {
   if (!dados?.length) return null;
 
   async function reativar(u: Unidade) {
-    if (!confirm(`Reativar "${u.nome}"? Ela volta a aparecer em todas as telas.`)) return;
+    if (!(await confirmar(`Reativar "${u.nome}"? Ela volta a aparecer em todas as telas.`, { botao: 'Reativar' }))) return;
     const { error } = await supabase.from('unidades').update({ ativa: true }).eq('id', u.id);
     if (error) return setErro(traduzErro(error));
     recarregar();

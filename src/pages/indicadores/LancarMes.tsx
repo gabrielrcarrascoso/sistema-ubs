@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok } from '../../lib/hooks';
 import { calcularValor } from '../../lib/indicadores';
@@ -27,6 +28,7 @@ export function LancarMes({
   aoFechar: () => void;
   aoSalvar: (quantos: number) => void;
 }) {
+  const confirmar = useConfirmar();
   const [unidadeId, setUnidadeId] = useState(unidadeInicial);
   const [mes, setMes] = useState(mesInicial);
   const [fonte, setFonte] = useState('');
@@ -93,7 +95,7 @@ export function LancarMes({
       };
     });
     if (problemas.length) return setErro(problemas.join(' · '));
-    if (acima100.length && !confirm(`Em ${acima100.join(', ')} o resultado passa de 100%. Salvar mesmo assim?`)) return;
+    if (acima100.length && !(await confirmar(`Em ${acima100.join(', ')} o resultado passa de 100%. Salvar mesmo assim?`, { botao: 'Salvar assim mesmo' }))) return;
     setSalvando(true);
     const { error } = await supabase.from('lancamentos').upsert(registros, { onConflict: 'indicador_id,unidade_id,competencia' });
     setSalvando(false);

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { useSearchParams } from 'react-router-dom';
 import { CalendarPlus, Download, Pencil, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
@@ -24,6 +25,7 @@ interface Formulario {
 const mesAnterior = () => ultimosMeses(2)[0].slice(0, 7);
 
 export function Lancamentos() {
+  const confirmar = useConfirmar();
   const { perfil, podeEditar } = useAuth();
   const [filtroUnidade, setFiltroUnidade] = useState('');
   const [filtroIndicador, setFiltroIndicador] = useState('');
@@ -72,7 +74,7 @@ export function Lancamentos() {
     if (form.numerador === null) return setErro('Informe o numerador.');
     if (indicadorDoForm.tipo !== 'contagem' && !form.denominador) return setErro('Informe um denominador maior que zero.');
     if (indicadorDoForm.tipo === 'percentual' && form.numerador > (form.denominador ?? 0))
-      if (!confirm('O numerador é maior que o denominador (resultado acima de 100%). Salvar mesmo assim?')) return;
+      if (!(await confirmar('A quantidade é maior que o total (resultado acima de 100%). Salvar mesmo assim?', { botao: 'Salvar assim mesmo' }))) return;
     const registro = {
       indicador_id: form.indicador_id,
       unidade_id: form.unidade_id,
@@ -91,7 +93,7 @@ export function Lancamentos() {
   }
 
   async function remover(l: Lancamento) {
-    if (!confirm(`Remover o lançamento de ${l.codigo} · ${l.unidade_nome} · ${mesAno(l.competencia)}?`)) return;
+    if (!(await confirmar(`Remover o número de "${l.indicador_nome}" · ${l.unidade_nome} · ${mesAno(l.competencia)}?`, { perigo: true }))) return;
     const { error } = await supabase.from('lancamentos').delete().eq('id', l.id);
     if (error) return setErro(traduzErro(error));
     lancQ.recarregar();

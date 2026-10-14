@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirmar } from '../../components/Confirmacao';
 import { supabase, traduzErro } from '../../lib/supabase';
 import type { CampoFicha, Unidade } from '../../lib/types';
 import { numOuNull } from '../../lib/util';
@@ -20,6 +21,7 @@ export function ModalFicha({
   aoFechar: () => void;
   aoSalvar: (idSalvo: string) => void;
 }) {
+  const confirmar = useConfirmar();
   const [u, setU] = useState<Partial<Unidade>>({ dados_ficha: {}, ...inicial });
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -61,7 +63,7 @@ export function ModalFicha({
 
   async function desativar() {
     if (!u.id) return;
-    if (!confirm(`Desativar "${u.nome}"?\n\nA UBS some das telas, mas todos os dados ficam guardados. Ela pode ser reativada em Configurações.`)) return;
+    if (!(await confirmar(`Desativar "${u.nome}"? A UBS some das telas, mas todos os dados ficam guardados. Ela pode ser reativada em Configurações.`, { perigo: true, botao: 'Desativar' }))) return;
     const { error } = await supabase.from('unidades').update({ ativa: false }).eq('id', u.id);
     if (error) return setErro(traduzErro(error));
     aoSalvar('');
