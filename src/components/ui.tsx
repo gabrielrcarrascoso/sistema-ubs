@@ -10,7 +10,7 @@ export function Cartao({ titulo, valor, nota }: { titulo: string; valor: ReactNo
   return (
     <div className="card">
       <div className="k">{titulo}</div>
-      <div className="value">{valor}</div>
+      <div className={`value ${typeof valor === 'string' && valor.length > 8 ? 'texto' : ''}`}>{valor}</div>
       {nota && <small>{nota}</small>}
     </div>
   );

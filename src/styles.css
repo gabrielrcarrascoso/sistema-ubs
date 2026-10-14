@@ -305,3 +305,11 @@ td.num, th.num { text-align: right; }
 }
 @media print { .nav-inferior, .seletor-ubs { display: none !important; } }
 .btn.icone + .btn.icone { margin-left: 4px; }
+.cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.card .value.texto { font-size: 15px; line-height: 1.35; font-weight: 800; letter-spacing: -.01em; }
+@media (max-width: 780px) {
+  .top .actions { gap: 6px; }
+  .top .actions .btn { padding: 8px 10px; font-size: 12px; }
+  .card { padding: 14px; }
+  .card .value { font-size: 24px; }
+}

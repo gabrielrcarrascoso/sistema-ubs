@@ -40,9 +40,9 @@ export function AbaFicha({
 
       <div className="cards">
         <Cartao titulo="Profissionais (declarado)" valor={u.profissionais_declarados ?? '—'} />
-        <Cartao titulo="Horário" valor={<span style={{ fontSize: 17 }}>{u.horario || '—'}</span>} />
-        <Cartao titulo="Atendimentos" valor={<span style={{ fontSize: 17 }}>{u.volume_estimado || '—'}</span>} nota="Estimativa" />
-        <Cartao titulo="Maior movimento" valor={<span style={{ fontSize: 17 }}>{u.pico || '—'}</span>} />
+        <Cartao titulo="Horário" valor={u.horario || '—'} />
+        <Cartao titulo="Atendimentos" valor={u.volume_estimado || '—'} nota="Estimativa" />
+        <Cartao titulo="Maior movimento" valor={u.pico || '—'} />
       </div>
 
       <Painel titulo="Informações da UBS">
