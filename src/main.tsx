@@ -6,7 +6,7 @@ import { App } from './App';
 import { ProvedorConfirmacao, ProvedorPergunta } from './components/Confirmacao';
 import './styles.css';
 
-// HashRouter usa endereços como site/#/unidades — funciona no GitHub Pages sem configuração extra
+// HashRouter usa endereços como site/#/ubs — funciona em qualquer hospedagem estática (Vercel) sem configuração extra
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
