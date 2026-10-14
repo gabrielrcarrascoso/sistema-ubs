@@ -382,3 +382,16 @@ td.num, th.num { text-align: right; }
 .select-simples { border-radius: 8px; border: 1px solid #d8e3ec; background: white; padding: 7px 10px; color: #28435a; font: inherit; font-size: 13px; }
 .field input:not([type=checkbox]):not([type=radio]), .field select { min-height: 40px; }
 .pergunta .field input, .pergunta .field textarea { max-width: 420px; }
+
+/* ---------- Situação dos indicadores ---------- */
+.situacao-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.situacao { text-align: left; border: 1px solid var(--line); border-left: 4px solid #cfdce6; background: #fbfdff; border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: column; gap: 4px; font: inherit; color: inherit; }
+.situacao:hover { border-color: #9fd0c8; }
+.situacao.ok { border-left-color: #2a9d8f; }
+.situacao.abaixo { border-left-color: #d0544e; }
+.situacao-nome { font-size: 12.5px; font-weight: 700; color: #48687f; line-height: 1.35; }
+.situacao-valor { font-size: 22px; font-weight: 850; letter-spacing: -.02em; }
+.situacao.ok .situacao-valor { color: #166f53; }
+.situacao.abaixo .situacao-valor { color: #a3302b; }
+.situacao-meta { font-size: 11.5px; color: var(--muted); }
+.two > * { min-width: 0; }

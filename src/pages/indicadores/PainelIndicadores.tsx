@@ -119,7 +119,7 @@ export function PainelIndicadores() {
         <Painel
           titulo="Evolução por período"
           acoes={
-            <select value={indSelecionado.id} onChange={e => setIndicadorId(e.target.value)} aria-label="Indicador do gráfico">
+            <select value={indSelecionado.id} onChange={e => setIndicadorId(e.target.value)} aria-label="Indicador do gráfico" className="select-simples">
               {indicadores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </select>
           }
@@ -136,18 +136,21 @@ export function PainelIndicadores() {
         </Painel>
       )}
 
-      <div className="two">
-        <Painel titulo="Situação dos indicadores">
+      <Painel titulo={`Situação dos indicadores${ultimoMesComDado ? ` · ${mesAno(ultimoMesComDado)}` : ''}`}>
+        <div className="situacao-grid">
           {resumo.map(({ indicador: i, valor, ok }) => (
-            <div className="item row-flex" key={i.id}>
-              <div>
-                <b>{i.nome}</b>
-                <p>{i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta definida'}</p>
-              </div>
-              <span className={`chip ${ok === null ? 'neutral' : ok ? '' : 'bad'}`}>{valorIndicador(valor, i.unidade_medida)}</span>
-            </div>
+            <button key={i.id} className={`situacao ${ok === null ? '' : ok ? 'ok' : 'abaixo'}`} onClick={() => setIndicadorId(i.id)} title="Ver no gráfico">
+              <span className="situacao-nome">{i.nome}</span>
+              <span className="situacao-valor">{valorIndicador(valor, i.unidade_medida)}</span>
+              <span className="situacao-meta">
+                {i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta'}
+                {ok === true && ' · atingida'}
+                {ok === false && ' · abaixo'}
+              </span>
+            </button>
           ))}
-        </Painel>
+        </div>
+      </Painel>
 
         <Painel titulo={`Por unidade${ultimoMesComDado ? ` · ${mesAno(ultimoMesComDado)}` : ''}`}>
           <div className="tablewrap">
@@ -177,7 +180,6 @@ export function PainelIndicadores() {
             </table>
           </div>
         </Painel>
-      </div>
 
       <div className="info">
         Privacidade por concepção: o sistema trabalha somente com dados agregados por unidade e mês, sem identificar

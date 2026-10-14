@@ -159,8 +159,8 @@ export function Lancamentos() {
                   <th>Competência</th>
                   <th>Indicador</th>
                   <th>Unidade</th>
-                  <th className="num">Numerador</th>
-                  <th className="num">Denominador</th>
+                  <th className="num">Quantidade</th>
+                  <th className="num">Total</th>
                   <th className="num">Valor</th>
                   <th>Fonte</th>
                   <th></th>
