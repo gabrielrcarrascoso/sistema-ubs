@@ -4,7 +4,9 @@ import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
 import type { Papel, Perfil } from '../../lib/types';
 import { dataBR, NOME_PAPEL } from '../../lib/util';
-import { Dica, Carregando, Cartao, Erro, Modal, Painel } from '../../components/ui';
+import { BotaoIcone, Dica, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { Check, Pencil } from 'lucide-react';
+import type { Unidade } from '../../lib/types';
 
 export function Usuarios() {
   const { perfil: eu, recarregarPerfil } = useAuth();
@@ -46,33 +48,35 @@ export function Usuarios() {
   return (
     <>
       <Dica id="config-usuarios">
-        Quem cria conta no site aparece aqui como <b>Aguardando</b>. Clique em <b>Aprovar</b> e escolha o papel: <b>Administrador da UBS</b> (precisa escolher a UBS dele) ou <b>Profissional</b> (só consulta). Para tirar o acesso de alguém, mude a situação para <b>Inativo</b>.
+        Quem cria conta no site aparece em <b>Sem acesso</b>. Escolha o papel (e a UBS, se for administrador de UBS) e clique em
+        <b> Aprovar</b>. Para tirar o acesso de alguém, clique no lápis e mude a situação para <b>Inativo</b>.
       </Dica>
       <Erro mensagem={(!editando && erro) || erroQ} />
 
-      <div className="cards">
-        <Cartao titulo="Usuários" valor={perfis.length} nota="Cadastrados" />
-        <Cartao titulo="Aguardando aprovação" valor={aguardando.length} nota="Sem acesso até serem aprovados" />
-        <Cartao titulo="Administradores gerais" valor={perfis.filter(p => p.ativo && p.papel === 'gestor').length} nota="Acesso total" />
-        <Cartao titulo="Administradores de UBS" valor={perfis.filter(p => p.ativo && p.papel === 'coordenador').length} nota="Editam a própria unidade" />
-      </div>
+      {aguardando.length > 0 && (
+        <Painel titulo={`Sem acesso (${aguardando.length})`}>
+          <p className="muted" style={{ marginBottom: 12 }}>Pessoas que se cadastraram e ainda não foram aprovadas, ou que foram desativadas.</p>
+          {aguardando.map(p => (
+            <AprovacaoRapida key={p.id} perfil={p} unidades={unidades} aoAprovar={recarregar} aoErro={setErro} />
+          ))}
+        </Painel>
+      )}
 
-      <Painel titulo="Todos os usuários">
+      <Painel titulo={`Com acesso (${perfis.length - aguardando.length})`}>
         <div className="tablewrap">
           <table>
             <thead>
-              <tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Unidade</th><th>Situação</th><th>Cadastro</th><th></th></tr>
+              <tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>UBS</th><th>Desde</th><th></th></tr>
             </thead>
             <tbody>
-              {perfis.map(p => (
+              {perfis.filter(p => p.ativo).map(p => (
                 <tr key={p.id}>
                   <td><b>{p.nome}</b>{p.id === eu?.id && <span className="muted"> (você)</span>}</td>
                   <td>{p.email}</td>
                   <td>{NOME_PAPEL[p.papel]}</td>
                   <td>{nomeUnidade(p.unidade_id)}</td>
-                  <td>{p.ativo ? <span className="chip">Ativo</span> : <span className="chip warn">Aguardando</span>}</td>
                   <td>{dataBR(p.created_at)}</td>
-                  <td><button className={`btn small ${p.ativo ? '' : 'primary'}`} onClick={() => setEditando(p)}>{p.ativo ? 'Editar' : 'Aprovar'}</button></td>
+                  <td style={{ textAlign: 'right' }}><BotaoIcone icone={Pencil} titulo="Alterar acesso" aoClicar={() => setEditando(p)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -121,5 +125,51 @@ export function Usuarios() {
         </Modal>
       )}
     </>
+  );
+}
+
+/** Linha de aprovação direta: escolhe papel e UBS e aprova, sem abrir janela */
+function AprovacaoRapida({
+  perfil: p,
+  unidades,
+  aoAprovar,
+  aoErro,
+}: {
+  perfil: Perfil;
+  unidades: Unidade[];
+  aoAprovar: () => void;
+  aoErro: (e: string | null) => void;
+}) {
+  const [papel, setPapel] = useState<Papel>(p.papel);
+  const [unidadeId, setUnidadeId] = useState(p.unidade_id ?? '');
+  const [salvando, setSalvando] = useState(false);
+  const faltaUBS = papel === 'coordenador' && !unidadeId;
+
+  async function aprovar() {
+    aoErro(null);
+    setSalvando(true);
+    const { error } = await supabase.from('perfis').update({ papel, unidade_id: unidadeId || null, ativo: true }).eq('id', p.id);
+    setSalvando(false);
+    if (error) return aoErro(traduzErro(error));
+    aoAprovar();
+  }
+
+  return (
+    <div className="aprovacao">
+      <div className="aprovacao-quem">
+        <b>{p.nome || p.email}</b>
+        <small>{p.email} · cadastro em {dataBR(p.created_at)}</small>
+      </div>
+      <select value={papel} onChange={e => setPapel(e.target.value as Papel)} aria-label="Papel" className="select-simples">
+        {(Object.keys(NOME_PAPEL) as Papel[]).map(x => <option key={x} value={x}>{NOME_PAPEL[x]}</option>)}
+      </select>
+      <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} aria-label="UBS" className="select-simples">
+        <option value="">{papel === 'coordenador' ? 'Escolha a UBS…' : 'Sem UBS'}</option>
+        {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+      </select>
+      <button className="btn primary" onClick={aprovar} disabled={salvando || faltaUBS} title={faltaUBS ? 'Escolha a UBS antes de aprovar' : ''}>
+        <Check size={16} strokeWidth={2} /> Aprovar
+      </button>
+    </div>
   );
 }

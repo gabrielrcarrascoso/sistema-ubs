@@ -406,3 +406,44 @@ td.num, th.num { text-align: right; }
 .modal-bg + .modal-bg { background: #0d1f3333; }
 
 .celula-fonte { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+
+/* ---------- Janelas: botões sempre visíveis no rodapé ---------- */
+.modal { padding-bottom: 0; display: flex; flex-direction: column; }
+.modal > h2 { flex-shrink: 0; }
+.modal .actions:last-child,
+.modal form > .actions:last-child {
+  position: sticky; bottom: 0; z-index: 3;
+  background: white; margin: 18px -22px 0; padding: 14px 22px 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- Restrições em cartões ---------- */
+.cartoes-restricao { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.cartao-restricao { border: 1px solid var(--line); border-left: 4px solid #cfdce6; border-radius: 12px; padding: 14px 16px; background: #fbfdff; }
+.cartao-restricao.alerta { border-left-color: #d08a1e; }
+.cartao-restricao header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.cartao-restricao header b { font-size: 14.5px; }
+.cartao-restricao-texto { color: var(--text); font-size: 13.5px; margin-bottom: 8px; }
+.cartao-restricao-linha { font-size: 12.5px; margin-top: 4px; }
+.cartao-restricao-linha span { display: inline-block; font-weight: 750; color: #48687f; margin-right: 6px; }
+.cartao-restricao-linha span::after { content: ':'; }
+
+.opcoes-mini { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.opcoes-mini span { font-size: 11px; background: #f1f5f8; color: #5c6e83; border-radius: 6px; padding: 2px 7px; }
+
+/* ---------- Aprovação rápida de usuários ---------- */
+.aprovacao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid #f3dca8; background: #fffbf2; border-radius: 12px; margin-bottom: 10px; }
+.aprovacao-quem { flex: 1; min-width: 200px; }
+.aprovacao-quem b { display: block; }
+.aprovacao-quem small { color: var(--muted); font-size: 12px; }
+
+/* ---------- Histórico (linha do tempo) ---------- */
+.historico-dia + .historico-dia { margin-top: 18px; }
+.historico-dia h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #147d79; margin: 0 0 6px; }
+.historico-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 9px; font: inherit; color: inherit; }
+.historico-item:hover { background: #f4f8fb; }
+.historico-hora { font-size: 12px; color: var(--muted); width: 42px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.historico-ponto { width: 9px; height: 9px; border-radius: 50%; background: #8fb3c9; flex-shrink: 0; }
+.historico-ponto.criacao { background: #2a9d8f; }
+.historico-ponto.remocao { background: #d0544e; }
+.historico-texto { font-size: 13.5px; line-height: 1.45; }

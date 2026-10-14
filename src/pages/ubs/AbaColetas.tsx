@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react';
+import { Download, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useConfirmar } from '../../components/Confirmacao';
-import { Download, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import type { Coleta as ColetaT, Unidade } from '../../lib/types';
 import { baixarCSV, dataBR, numeroBR, numOuNull } from '../../lib/util';
-import { BotaoIcone, BarraAba, Campo, Carregando, Cartao, Dica, Erro, Painel } from '../../components/ui';
+import { BotaoIcone, BarraAba, Campo, Carregando, Dica, Erro, EstadoVazio, Modal, Painel } from '../../components/ui';
+import { CampoDinamico } from '../../components/CampoDinamico';
 
 type Formulario = Partial<ColetaT>;
 
@@ -22,45 +23,43 @@ export function calcularCapacidade(c: Formulario) {
   return { necessaria, capacidade, ocupacao: (necessaria / capacidade) * 100, folga: capacidade - necessaria };
 }
 
+const classeOcupacao = (o: number) => (o > 100 ? 'bad' : o > 85 ? 'warn' : '');
+
 /** Visitas de campo e cálculo de capacidade de uma UBS */
 export function AbaColetas({ unidade }: { unidade: Unidade }) {
   const confirmar = useConfirmar();
   const { perfil, podeEditar } = useAuth();
   const unidadeId = unidade.id;
-  const [form, setForm] = useState<Formulario>({ responsavel: perfil?.nome ?? '' });
+  const [form, setForm] = useState<Formulario | null>(null); // null = janela fechada
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const coletasQ = useConsulta(
     async () =>
-      unidadeId
-        ? ok<ColetaT[]>(
-            await supabase.from('coletas').select('*').eq('unidade_id', unidadeId).order('data_visita', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }),
-          )
-        : [],
+      ok<ColetaT[]>(
+        await supabase
+          .from('coletas')
+          .select('*')
+          .eq('unidade_id', unidadeId)
+          .order('data_visita', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false }),
+      ),
     [unidadeId],
   );
 
   const editavel = podeEditar(unidadeId);
-  const calculo = calcularCapacidade(form);
+  const coletas = coletasQ.dados ?? [];
 
-  const texto = (campo: keyof Formulario) => ({
-    value: (form[campo] as string | null) ?? '',
-    onChange: (e: { target: { value: string } }) => setForm({ ...form, [campo]: e.target.value }),
-  });
-  const numero = (campo: keyof Formulario) => ({
-    type: 'number',
-    min: 0,
-    step: 'any',
-    value: (form[campo] as number | null) ?? '',
-    onChange: (e: { target: { value: string } }) => setForm({ ...form, [campo]: numOuNull(e.target.value) }),
-  });
+  const nova = () => {
+    setErro(null);
+    setForm({ responsavel: perfil?.nome ?? '', data_visita: new Date().toISOString().slice(0, 10) });
+  };
 
   async function salvar(e: FormEvent) {
     e.preventDefault();
+    if (!form) return;
     setErro(null);
-    setAviso(null);
     setSalvando(true);
     const registro = {
       unidade_id: unidadeId,
@@ -81,8 +80,8 @@ export function AbaColetas({ unidade }: { unidade: Unidade }) {
       : await supabase.from('coletas').insert(registro);
     setSalvando(false);
     if (error) return setErro(traduzErro(error));
-    setAviso(form.id ? 'Coleta atualizada.' : 'Coleta registrada no banco de dados.');
-    setForm({ responsavel: perfil?.nome ?? '' });
+    setAviso(form.id ? 'Visita atualizada.' : 'Visita registrada.');
+    setForm(null);
     coletasQ.recarregar();
   }
 
@@ -106,140 +105,154 @@ export function AbaColetas({ unidade }: { unidade: Unidade }) {
           k ? numeroBR(k.necessaria) : '', k ? numeroBR(k.capacidade) : '', k ? numeroBR(k.ocupacao) : '', c.fonte, c.observacao];
       }),
     ];
-    baixarCSV(linhas, 'coletas_ubs.csv');
+    baixarCSV(linhas, 'visitas_de_campo.csv');
   }
 
   return (
     <>
       <Dica id="ubs-coletas">
-        Registre aqui cada <b>visita de campo</b> à UBS. Preencha a demanda semanal de uma atividade, o tempo médio de
-        atendimento, quantos profissionais podem fazê-la e quantas horas por semana cada um tem — o sistema calcula se a
-        equipe dá conta. Cada visita fica guardada no histórico. <b>Não insira dados de pacientes.</b>
+        Registre aqui cada <b>visita de campo</b> à UBS. Se quiser, preencha também o <b>cálculo de capacidade</b> de uma
+        atividade: o sistema diz se a equipe dá conta da demanda. <b>Não insira dados de pacientes.</b>
       </Dica>
-      <BarraAba acoes={<button className="btn" onClick={exportarTudo}><Download size={16} strokeWidth={1.8} /> Exportar coletas de todas as UBS</button>} />
-      <Erro mensagem={erro || coletasQ.erro} />
+      <BarraAba
+        acoes={
+          <>
+            <button className="btn" onClick={exportarTudo} title="Planilha com as visitas de todas as UBS"><Download size={16} strokeWidth={1.8} /> Exportar (todas as UBS)</button>
+            {editavel && <button className="btn primary" onClick={nova}><Plus size={16} strokeWidth={1.8} /> Registrar visita</button>}
+          </>
+        }
+      />
+      <Erro mensagem={(!form && erro) || coletasQ.erro} />
       {aviso && <div className="info" style={{ marginBottom: 14 }}>{aviso}</div>}
 
-      {editavel ? (
-        <Painel titulo={`${form.id ? 'Editar visita' : 'Registrar nova visita'} — ${unidade.nome}`}>
-          <form onSubmit={salvar}>
-            <div className="form-grid">
-              <Campo rotulo="Responsável pela coleta"><input {...texto('responsavel')} /></Campo>
-              <Campo rotulo="Data da visita"><input type="date" {...texto('data_visita')} /></Campo>
-              <Campo rotulo="Total confirmado de profissionais"><input {...numero('total_confirmado')} /></Campo>
-              <Campo rotulo="Escalas individuais disponíveis?">
-                <select {...texto('escalas_disponiveis')}>
-                  <option value="">Selecione</option>
-                  <option>Sim</option>
-                  <option>Não</option>
-                  <option>Parcial</option>
-                </select>
-              </Campo>
-              <Campo rotulo="Atividade analisada"><input {...texto('atividade')} /></Campo>
-              <Campo rotulo="Atendimentos/semana da atividade"><input {...numero('demanda_semanal')} /></Campo>
-              <Campo rotulo="Minutos médios por atendimento"><input {...numero('duracao_media_min')} /></Campo>
-              <Campo rotulo="Profissionais habilitados e disponíveis"><input {...numero('profissionais_habilitados')} /></Campo>
-              <Campo rotulo="Horas efetivas/semana por profissional"><input {...numero('horas_semana_profissional')} /></Campo>
-              <Campo rotulo="Fonte / evidência dos dados" className="wide"><input {...texto('fonte')} /></Campo>
-              <Campo rotulo="Observações e restrições adicionais" className="full">
-                <textarea placeholder="Anote informações verificadas e pendências…" {...texto('observacao')} />
-              </Campo>
-            </div>
-            <div className="actions" style={{ marginTop: 15 }}>
-              <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : form.id ? 'Salvar alterações' : 'Registrar visita'}</button>
-              {form.id && <button type="button" className="btn" onClick={() => setForm({ responsavel: perfil?.nome ?? '' })}>Cancelar edição</button>}
-            </div>
-          </form>
-        </Painel>
+      {coletasQ.carregando ? (
+        <Carregando />
+      ) : coletas.length === 0 ? (
+        <EstadoVazio icone={MapPin} titulo="Nenhuma visita registrada nesta UBS">
+          {editavel ? 'Clique em “Registrar visita” depois de cada ida a campo.' : 'Quando houver visitas registradas, elas aparecem aqui.'}
+        </EstadoVazio>
       ) : (
-        <div className="callout" style={{ marginBottom: 20 }}>
-          Você pode consultar as coletas desta unidade, mas apenas o administrador geral ou o administrador desta UBS podem registrar novas.
-        </div>
-      )}
-
-      {editavel && (
-        <Painel titulo="Prévia de capacidade por atividade">
-          {calculo ? (
-            <>
-              <div className="cards">
-                <Cartao titulo="Carga necessária" valor={`${numeroBR(calculo.necessaria)}h`} nota="Demanda × minutos ÷ 60" />
-                <Cartao titulo="Capacidade estimada" valor={`${numeroBR(calculo.capacidade)}h`} nota="Profissionais × horas efetivas" />
-                <Cartao titulo="Ocupação estimada" valor={`${numeroBR(calculo.ocupacao)}%`} nota="Somente para a atividade preenchida" />
-                <Cartao titulo="Diferença" valor={`${numeroBR(calculo.folga)}h`} nota="Capacidade menos demanda" />
-              </div>
-              <div className={calculo.necessaria > calculo.capacidade ? 'alert' : 'info'}>
-                {calculo.necessaria > calculo.capacidade && <b>Demanda acima da capacidade estimada. </b>}
-                Cálculo indicativo: não é otimização, não resolve conflitos entre atividades e não valida automaticamente
-                competências ou horários.
-              </div>
-            </>
-          ) : (
-            <div className="callout">
-              Preencha demanda, tempo médio, número de profissionais habilitados/disponíveis e horas efetivas para estimar a
-              capacidade. Campos vazios não são tratados como zero.
-            </div>
-          )}
-        </Painel>
-      )}
-
-      <Painel titulo="Histórico de visitas">
-        {coletasQ.carregando ? (
-          <Carregando />
-        ) : (
+        <Painel titulo={`Visitas (${coletas.length})`}>
           <div className="tablewrap">
             <table>
               <thead>
                 <tr>
                   <th>Data</th>
                   <th>Responsável</th>
-                  <th>Atividade</th>
-                  <th className="num">Demanda/sem.</th>
-                  <th className="num">Carga (h)</th>
-                  <th className="num">Capacidade (h)</th>
+                  <th>Atividade analisada</th>
+                  <th className="num">Carga / capacidade</th>
                   <th className="num">Ocupação</th>
-                  <th>Fonte</th>
                   {editavel && <th></th>}
                 </tr>
               </thead>
               <tbody>
-                {coletasQ.dados?.map(c => {
+                {coletas.map(c => {
                   const k = calcularCapacidade(c);
                   return (
                     <tr key={c.id}>
                       <td>{dataBR(c.data_visita)}</td>
                       <td>{c.responsavel}</td>
-                      <td>{c.atividade}</td>
-                      <td className="num">{numeroBR(c.demanda_semanal)}</td>
-                      <td className="num">{k ? numeroBR(k.necessaria) : '—'}</td>
-                      <td className="num">{k ? numeroBR(k.capacidade) : '—'}</td>
-                      <td className="num">
-                        {k ? <span className={`chip ${k.ocupacao > 100 ? 'bad' : k.ocupacao > 85 ? 'warn' : ''}`}>{numeroBR(k.ocupacao)}%</span> : '—'}
-                      </td>
-                      <td>{c.fonte}</td>
+                      <td>{c.atividade || <span className="none">—</span>}</td>
+                      <td className="num">{k ? `${numeroBR(k.necessaria)}h / ${numeroBR(k.capacidade)}h` : '—'}</td>
+                      <td className="num">{k ? <span className={`chip ${classeOcupacao(k.ocupacao)}`}>{numeroBR(k.ocupacao)}%</span> : '—'}</td>
                       {editavel && (
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => { setForm(c); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+                        <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                          <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => { setErro(null); setForm(c); }} />
                           <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(c)} />
                         </td>
                       )}
                     </tr>
                   );
                 })}
-                {coletasQ.dados?.length === 0 && (
-                  <tr><td colSpan={9} className="empty">Nenhuma coleta registrada para esta unidade.</td></tr>
-                )}
               </tbody>
             </table>
           </div>
-        )}
-      </Painel>
+          <p className="muted" style={{ marginTop: 10 }}>
+            Ocupação acima de 85% fica amarela; acima de 100% (demanda maior que a capacidade), vermelha.
+          </p>
+        </Painel>
+      )}
 
-      <Painel titulo="Como interpretar o cálculo">
-        <div className="info">
-          Este módulo estima a carga de uma única atividade. Um modelo matemático completo de designação depende de escalas
-          por profissional, demanda por atividade, prioridades, espaços e restrições de competência.
-        </div>
-      </Painel>
+      {form && <FormularioVisita form={form} setForm={setForm} unidade={unidade} erro={erro} salvando={salvando} aoSalvar={salvar} />}
     </>
+  );
+}
+
+function FormularioVisita({
+  form,
+  setForm,
+  unidade,
+  erro,
+  salvando,
+  aoSalvar,
+}: {
+  form: Formulario;
+  setForm: (f: Formulario | null) => void;
+  unidade: Unidade;
+  erro: string | null;
+  salvando: boolean;
+  aoSalvar: (e: FormEvent) => void;
+}) {
+  const calculo = calcularCapacidade(form);
+  const texto = (campo: keyof Formulario) => ({
+    value: (form[campo] as string | null) ?? '',
+    onChange: (e: { target: { value: string } }) => setForm({ ...form, [campo]: e.target.value }),
+  });
+  const numero = (campo: keyof Formulario) => ({
+    type: 'number',
+    min: 0,
+    step: 'any',
+    value: (form[campo] as number | null) ?? '',
+    onChange: (e: { target: { value: string } }) => setForm({ ...form, [campo]: numOuNull(e.target.value) }),
+  });
+
+  return (
+    <Modal titulo={`${form.id ? 'Editar visita' : 'Registrar visita'} · ${unidade.nome}`} aoFechar={() => setForm(null)}>
+      <form onSubmit={aoSalvar}>
+        <Erro mensagem={erro} />
+        <div className="ficha-secao"><h3>Sobre a visita</h3></div>
+        <div className="form-grid cols-2">
+          <Campo rotulo="Responsável pela coleta"><input {...texto('responsavel')} /></Campo>
+          <Campo rotulo="Data da visita"><input type="date" {...texto('data_visita')} /></Campo>
+          <Campo rotulo="Profissionais confirmados na visita"><input {...numero('total_confirmado')} /></Campo>
+          <Campo rotulo="Há escalas individuais por profissional?">
+            <CampoDinamico tipo="escolha_unica" opcoes={['Sim', 'Não', 'Parcial']} valor={form.escalas_disponiveis ?? null} aoMudar={v => setForm({ ...form, escalas_disponiveis: (v as string) ?? null })} />
+          </Campo>
+          <Campo rotulo="Fonte / evidência" className="full" dica="Ex.: entrevista com a enfermeira coordenadora, escala impressa, relatório do PEC">
+            <input {...texto('fonte')} />
+          </Campo>
+          <Campo rotulo="Observações" className="full">
+            <textarea placeholder="O que foi verificado e o que ainda falta levantar…" {...texto('observacao')} />
+          </Campo>
+        </div>
+
+        <div className="ficha-secao" style={{ marginTop: 20 }}><h3>Cálculo de capacidade (opcional)</h3></div>
+        <p className="muted" style={{ marginBottom: 10 }}>Para uma atividade, a equipe consegue atender a demanda da semana?</p>
+        <div className="form-grid cols-2">
+          <Campo rotulo="Atividade analisada" className="full" dica="Ex.: Consulta de enfermagem"><input {...texto('atividade')} /></Campo>
+          <Campo rotulo="Atendimentos por semana"><input {...numero('demanda_semanal')} /></Campo>
+          <Campo rotulo="Minutos por atendimento (média)"><input {...numero('duracao_media_min')} /></Campo>
+          <Campo rotulo="Profissionais que fazem a atividade"><input {...numero('profissionais_habilitados')} /></Campo>
+          <Campo rotulo="Horas por semana de cada um"><input {...numero('horas_semana_profissional')} /></Campo>
+        </div>
+        {calculo ? (
+          <div className={calculo.necessaria > calculo.capacidade ? 'alert' : 'info'} style={{ marginTop: 14 }}>
+            A atividade precisa de <b>{numeroBR(calculo.necessaria)}h</b> por semana e a equipe tem <b>{numeroBR(calculo.capacidade)}h</b> →
+            ocupação de <b>{numeroBR(calculo.ocupacao)}%</b>.{' '}
+            {calculo.necessaria > calculo.capacidade
+              ? `Faltam ${numeroBR(-calculo.folga)}h por semana.`
+              : `Sobram ${numeroBR(calculo.folga)}h por semana.`}{' '}
+            <span className="muted">(estimativa simples, não é uma escala)</span>
+          </div>
+        ) : (
+          <p className="muted" style={{ marginTop: 10 }}>Preencha os 4 números para ver o resultado. Campos vazios não contam como zero.</p>
+        )}
+
+        <div className="actions">
+          <button type="button" className="btn" onClick={() => setForm(null)}>Cancelar</button>
+          <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : form.id ? 'Salvar alterações' : 'Registrar visita'}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }

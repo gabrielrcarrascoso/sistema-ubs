@@ -93,18 +93,23 @@ export function CamposFicha() {
           <div className="tablewrap">
             <table>
               <thead>
-                <tr><th>Campo</th><th>Tipo</th><th>Opções</th><th>Situação</th><th></th></tr>
+                <tr><th>Campo</th><th>Tipo de resposta</th><th></th></tr>
               </thead>
               <tbody>
                 {lista.map((c, i) => (
                   <tr key={c.id} style={{ opacity: c.ativo ? 1 : 0.5 }}>
                     <td>
-                      <b>{c.nome}</b>{c.obrigatorio && <span className="muted"> · obrigatório</span>}
-                      {c.ajuda && <div className="muted">{c.ajuda}</div>}
+                      <b>{c.nome}</b>
+                      {c.obrigatorio && <span className="chip warn" style={{ marginLeft: 6 }}>obrigatório</span>}
+                      {!c.ativo && <span className="chip neutral" style={{ marginLeft: 6 }}>desativado</span>}
+                      {c.ajuda && <div className="muted" style={{ marginTop: 3 }}>{c.ajuda}</div>}
                     </td>
-                    <td>{NOME_TIPO_CAMPO[c.tipo]}</td>
-                    <td className="muted">{c.opcoes.join(', ')}</td>
-                    <td>{c.ativo ? <span className="chip">Ativo</span> : <span className="chip neutral">Desativado</span>}</td>
+                    <td>
+                      {NOME_TIPO_CAMPO[c.tipo]}
+                      {c.opcoes.length > 0 && (
+                        <div className="opcoes-mini">{c.opcoes.map(o => <span key={o}>{o}</span>)}</div>
+                      )}
+                    </td>
                     <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                       <button className="btn small" disabled={i === 0} onClick={() => mover(c, -1)} title="Subir"><ChevronUp size={14} strokeWidth={2} /></button>{' '}
                       <button className="btn small" disabled={i === lista.length - 1} onClick={() => mover(c, 1)} title="Descer"><ChevronDown size={14} strokeWidth={2} /></button>{' '}

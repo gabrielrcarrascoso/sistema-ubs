@@ -106,45 +106,31 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
       <Erro mensagem={erro || dadosQ.erro} />
 
       <Painel
-        titulo="Restrições e gargalos registrados"
+        titulo={`Restrições (${dadosQ.dados?.restricoes.length ?? 0})`}
         acoes={editavel && <button className="btn small primary" onClick={() => setRestricao({})}><Plus size={16} strokeWidth={1.8} /> Nova restrição</button>}
       >
         {dadosQ.carregando ? (
           <Carregando />
         ) : (
-          <div className="tablewrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Dimensão</th>
-                  <th>Informação disponível</th>
-                  <th>Impacto</th>
-                  <th>Estado</th>
-                  <th>Validar em campo</th>
-                  {editavel && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {dadosQ.dados?.restricoes.map(r => (
-                  <tr key={r.id}>
-                    <td><b>{r.tipo}</b></td>
-                    <td>{r.descricao}</td>
-                    <td>{r.impacto}</td>
-                    <td>{r.status && <span className={`chip ${ehAlerta(r.status) ? 'warn' : 'neutral'}`}>{r.status}</span>}</td>
-                    <td>{r.validar}</td>
-                    {editavel && (
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setRestricao(r)} />
-                        <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={async () => (await confirmar('Remover esta restrição?', { perigo: true })) && executar(supabase.from('restricoes').delete().eq('id', r.id))} />
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {dadosQ.dados?.restricoes.length === 0 && (
-                  <tr><td colSpan={6} className="empty">Nenhuma restrição registrada para esta unidade.</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="cartoes-restricao">
+            {dadosQ.dados?.restricoes.map(r => (
+              <article key={r.id} className={`cartao-restricao ${ehAlerta(r.status) ? 'alerta' : ''}`}>
+                <header>
+                  <b>{r.tipo}</b>
+                  {r.status && <span className={`chip ${ehAlerta(r.status) ? 'warn' : 'neutral'}`}>{r.status}</span>}
+                  {editavel && (
+                    <span className="acoes-linha" style={{ marginLeft: 'auto' }}>
+                      <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => setRestricao(r)} />
+                      <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={async () => (await confirmar('Remover esta restrição?', { perigo: true })) && executar(supabase.from('restricoes').delete().eq('id', r.id))} />
+                    </span>
+                  )}
+                </header>
+                <p className="cartao-restricao-texto">{r.descricao}</p>
+                {r.impacto && <p className="cartao-restricao-linha"><span>Impacto</span>{r.impacto}</p>}
+                {r.validar && <p className="cartao-restricao-linha"><span>Validar em campo</span>{r.validar}</p>}
+              </article>
+            ))}
+            {dadosQ.dados?.restricoes.length === 0 && <p className="empty">Nenhuma restrição registrada para esta UBS.</p>}
           </div>
         )}
       </Painel>

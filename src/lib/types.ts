@@ -147,6 +147,7 @@ export interface RegistroAuditoria {
   tabela: string;
   registro_id: string | null;
   acao: 'INSERT' | 'UPDATE' | 'DELETE';
+  usuario_id: string | null;
   usuario_email: string | null;
   dados_antes: Record<string, unknown> | null;
   dados_depois: Record<string, unknown> | null;
