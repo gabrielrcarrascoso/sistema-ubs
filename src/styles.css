@@ -418,7 +418,7 @@ td.num, th.num { text-align: right; }
 }
 
 /* ---------- Restrições em cartões ---------- */
-.cartoes-restricao { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.cartoes-restricao { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 12px; }
 .cartao-restricao { border: 1px solid var(--line); border-left: 4px solid #cfdce6; border-radius: 12px; padding: 14px 16px; background: #fbfdff; }
 .cartao-restricao.alerta { border-left-color: #d08a1e; }
 .cartao-restricao header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }

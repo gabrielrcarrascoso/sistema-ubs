@@ -106,7 +106,7 @@ export function AbaRestricoes({ unidade, unidades }: { unidade: Unidade; unidade
       <Erro mensagem={erro || dadosQ.erro} />
 
       <Painel
-        titulo={`Restrições (${dadosQ.dados?.restricoes.length ?? 0})`}
+        titulo={dadosQ.carregando ? "Restrições" : `Restrições (${dadosQ.dados?.restricoes.length ?? 0})`}
         acoes={editavel && <button className="btn small primary" onClick={() => setRestricao({})}><Plus size={16} strokeWidth={1.8} /> Nova restrição</button>}
       >
         {dadosQ.carregando ? (
