@@ -107,10 +107,8 @@ Abra o endereço que aparecer (ex.: http://localhost:5173).
 
 1. Envie o código para um repositório no GitHub (branch `main`).
 2. No repositório: *Settings → Pages → Source:* **GitHub Actions**.
-3. *Settings → Secrets and variables → Actions → Variables*, crie:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`
-4. Cada `git push` na `main` publica o site automaticamente (aba *Actions* mostra o progresso).
+3. Os dados de conexão do site publicado ficam em `.env.production` (URL e chave *publishable* do Supabase).
+4. Cada `git push` na `main` roda os testes do banco e publica o site automaticamente (aba *Actions* mostra o progresso).
 
 A chave *publishable* é pública por natureza: a segurança está nas regras RLS do banco. **Nunca** coloque a
 *secret key* / *service_role* no código.
