@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
-// Modo escuro é o padrão; a escolha fica guardada neste navegador.
-// O index.html aplica o tema antes da página aparecer (para não "piscar" branco).
+// Modo claro é o padrão; a escolha fica guardada neste navegador.
+// O index.html aplica o tema antes da página aparecer (para não "piscar").
 type Tema = 'escuro' | 'claro';
 const CHAVE = 'sistema-ubs:tema';
 
 function lerTema(): Tema {
   try {
-    return localStorage.getItem(CHAVE) === 'claro' ? 'claro' : 'escuro';
+    return localStorage.getItem(CHAVE) === 'escuro' ? 'escuro' : 'claro';
   } catch {
-    return 'escuro';
+    return 'claro';
   }
 }
 
 function aplicarTema(tema: Tema) {
-  if (tema === 'claro') document.documentElement.dataset.theme = 'light';
+  if (tema === 'escuro') document.documentElement.dataset.theme = 'dark';
   else delete document.documentElement.dataset.theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tema === 'claro' ? '#0F2B27' : '#070E0D');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tema === 'claro' ? '#0F3832' : '#070E0D');
   try {
     localStorage.setItem(CHAVE, tema);
   } catch {
