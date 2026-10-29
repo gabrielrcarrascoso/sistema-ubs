@@ -942,3 +942,80 @@ tr:hover td { background: var(--superficie-2); }
 
 /* login */
 :root:not([data-theme='dark']) .auth-box { border-color: #e8edeb; }
+
+/* =====================================================================
+   MODO CLARO — destaque: topo de cada página em painel verde (o verde do modo escuro),
+   números encaixados sobre ele, abas ativas em verde. Só vale no claro.
+   ===================================================================== */
+:root:not([data-theme='dark']) .top {
+  position: relative; overflow: hidden; isolation: isolate;
+  margin-bottom: 26px; padding: 28px 32px 30px; border-radius: 24px; color: #fff;
+  background:
+    radial-gradient(80% 140% at 100% 0%, rgba(240, 178, 82, 0.32), transparent 55%),
+    radial-gradient(70% 130% at 0% 100%, rgba(63, 208, 182, 0.25), transparent 60%),
+    linear-gradient(135deg, #10614f 0%, #0d4b41 48%, #0a3530 100%);
+  box-shadow: 0 2px 4px rgba(11, 66, 57, 0.10), 0 24px 48px -24px rgba(11, 66, 57, 0.6);
+}
+/* a cruz da marca, grande e discreta, no canto */
+:root:not([data-theme='dark']) .top::after {
+  content: ''; position: absolute; z-index: -1; right: -30px; top: -40px; width: 230px; height: 230px; opacity: 0.08; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M16.5 9h7v7.5H31v7h-7.5V31h-7v-7.5H9v-7h7.5z' fill='white'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:root:not([data-theme='dark']) .top h1 { color: #fff; }
+:root:not([data-theme='dark']) .top p { color: #c3e2da; }
+:root:not([data-theme='dark']) .top .data-hoje { color: #f6c97f; }
+:root:not([data-theme='dark']) .top .data-hoje::before { box-shadow: 0 0 0 3px rgba(246, 201, 127, 0.25); }
+:root:not([data-theme='dark']) .top .btn { background: rgba(255, 255, 255, 0.10); border-color: rgba(255, 255, 255, 0.24); color: #fff; box-shadow: none; }
+:root:not([data-theme='dark']) .top .btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.34); }
+:root:not([data-theme='dark']) .top .btn.primary { background: #fff; border-color: #fff; color: #0b5e51; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35); }
+:root:not([data-theme='dark']) .top .btn.primary:hover:not(:disabled) { background: #eef8f5; }
+
+/* os números ficam "encaixados" na borda de baixo do painel verde */
+:root:not([data-theme='dark']) .top:has(+ .numeros) { padding-bottom: 78px; }
+:root:not([data-theme='dark']) .top + .numeros { position: relative; z-index: 1; margin-top: -78px; padding: 0 18px; }
+:root:not([data-theme='dark']) .top + .numeros .numero { box-shadow: 0 2px 4px rgba(16, 34, 30, 0.05), 0 18px 36px -18px rgba(16, 34, 30, 0.28); }
+
+/* número em destaque: cartão branco com o número em verde (para não sumir em cima do painel verde) */
+:root:not([data-theme='dark']) .numero.destaque {
+  background: radial-gradient(110% 140% at 100% 0%, rgba(240, 178, 82, 0.18), transparent 52%), #fff;
+  border: 1px solid #e3ebe8; color: var(--text);
+}
+:root:not([data-theme='dark']) .numero.destaque .numero-rotulo,
+:root:not([data-theme='dark']) .numero.destaque .numero-detalhe { color: var(--muted); }
+:root:not([data-theme='dark']) .numero.destaque .numero-rotulo svg {
+  box-sizing: content-box; padding: 6px; border-radius: 9px; background: #fdf3df; color: #b07a12;
+}
+:root:not([data-theme='dark']) .numero.destaque .numero-valor {
+  background: linear-gradient(135deg, #0b5e51 0%, #12917e 60%, #2fb59d 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+:root:not([data-theme='dark']) .numero.destaque::after {
+  opacity: 0.07;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M16.5 9h7v7.5H31v7h-7.5V31h-7v-7.5H9v-7h7.5z' fill='%230E7C6B'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* abas: a ativa fica verde */
+:root:not([data-theme='dark']) .aba.ativa { background: var(--primary); color: #fff; box-shadow: 0 6px 14px -6px rgba(14, 124, 107, 0.7); }
+:root:not([data-theme='dark']) .aba.ativa svg { color: #fff; }
+
+/* títulos dos cartões e das seções com um traço verde */
+:root:not([data-theme='dark']) .cartao-grafico h2,
+:root:not([data-theme='dark']) .titulo-secao { display: flex; align-items: center; gap: 9px; }
+:root:not([data-theme='dark']) .cartao-grafico h2::before,
+:root:not([data-theme='dark']) .titulo-secao::before {
+  content: ''; flex-shrink: 0; width: 4px; height: 16px; border-radius: 3px; background: linear-gradient(180deg, #12917e, #3fd0b6);
+}
+
+@media (max-width: 780px) {
+  :root:not([data-theme='dark']) .top { padding: 22px 20px 24px; border-radius: 20px; }
+  :root:not([data-theme='dark']) .top::after { width: 160px; height: 160px; right: -24px; top: -28px; }
+  :root:not([data-theme='dark']) .top:has(+ .numeros) { padding-bottom: 66px; }
+  :root:not([data-theme='dark']) .top + .numeros { margin-top: -66px; padding: 0 10px; }
+}
+@media print {
+  :root:not([data-theme='dark']) .top { background: none; color: var(--text); box-shadow: none; padding: 0; }
+  :root:not([data-theme='dark']) .top h1 { color: var(--text); }
+  :root:not([data-theme='dark']) .top p { color: var(--muted); }
+  :root:not([data-theme='dark']) .top + .numeros { margin-top: 0; padding: 0; }
+  :root:not([data-theme='dark']) .top::after { display: none; }
+}
