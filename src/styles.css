@@ -945,7 +945,7 @@ tr:hover td { background: var(--superficie-2); }
 
 /* =====================================================================
    MODO CLARO — destaque: topo de cada página em painel verde (o verde do modo escuro),
-   números encaixados sobre ele, abas ativas em verde. Só vale no claro.
+   abas ativas em verde. Só vale no claro.
    ===================================================================== */
 :root:not([data-theme='dark']) .top {
   position: relative; overflow: hidden; isolation: isolate;
@@ -970,12 +970,10 @@ tr:hover td { background: var(--superficie-2); }
 :root:not([data-theme='dark']) .top .btn.primary { background: #fff; border-color: #fff; color: #0b5e51; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35); }
 :root:not([data-theme='dark']) .top .btn.primary:hover:not(:disabled) { background: #eef8f5; }
 
-/* os números ficam "encaixados" na borda de baixo do painel verde */
-:root:not([data-theme='dark']) .top:has(+ .numeros) { padding-bottom: 78px; }
-:root:not([data-theme='dark']) .top + .numeros { position: relative; z-index: 1; margin-top: -78px; padding: 0 18px; }
-:root:not([data-theme='dark']) .top + .numeros .numero { box-shadow: 0 2px 4px rgba(16, 34, 30, 0.05), 0 18px 36px -18px rgba(16, 34, 30, 0.28); }
+/* números logo abaixo do painel verde, com sombra um pouco mais forte */
+:root:not([data-theme='dark']) .numero { box-shadow: 0 1px 2px rgba(16, 34, 30, 0.04), 0 10px 24px -14px rgba(16, 34, 30, 0.22); }
 
-/* número em destaque: cartão branco com o número em verde (para não sumir em cima do painel verde) */
+/* número em destaque: cartão branco com o número em verde */
 :root:not([data-theme='dark']) .numero.destaque {
   background: radial-gradient(110% 140% at 100% 0%, rgba(240, 178, 82, 0.18), transparent 52%), #fff;
   border: 1px solid #e3ebe8; color: var(--text);
@@ -1009,13 +1007,10 @@ tr:hover td { background: var(--superficie-2); }
 @media (max-width: 780px) {
   :root:not([data-theme='dark']) .top { padding: 22px 20px 24px; border-radius: 20px; }
   :root:not([data-theme='dark']) .top::after { width: 160px; height: 160px; right: -24px; top: -28px; }
-  :root:not([data-theme='dark']) .top:has(+ .numeros) { padding-bottom: 66px; }
-  :root:not([data-theme='dark']) .top + .numeros { margin-top: -66px; padding: 0 10px; }
 }
 @media print {
   :root:not([data-theme='dark']) .top { background: none; color: var(--text); box-shadow: none; padding: 0; }
   :root:not([data-theme='dark']) .top h1 { color: var(--text); }
   :root:not([data-theme='dark']) .top p { color: var(--muted); }
-  :root:not([data-theme='dark']) .top + .numeros { margin-top: 0; padding: 0; }
   :root:not([data-theme='dark']) .top::after { display: none; }
 }
