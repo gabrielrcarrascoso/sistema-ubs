@@ -229,9 +229,11 @@ export function Linhas({
   const L = 640, A = 230, mE = 44, mD = 16, mT = 14, mB = 28;
   const valores = series.flatMap(s => s.pontos.filter((p): p is number => p !== null));
   const maxBruto = Math.max(meta ?? 0, ...valores, 1);
-  // eixo com números redondos
-  const passo = Math.pow(10, Math.floor(Math.log10(maxBruto))) / 2;
-  const max = Math.ceil((maxBruto * 1.08) / passo) * passo;
+  // passo "redondo" (1, 2, 2,5 ou 5 × 10ⁿ) para o eixo ter 4 divisões com números inteiros
+  const bruto = (maxBruto * 1.08) / 4;
+  const ordem = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const passo = [1, 2, 2.5, 5, 10].map(f => f * ordem).find(v => v >= bruto) ?? 10 * ordem;
+  const max = passo * 4;
   const x = (i: number) => mE + (rotulosX.length === 1 ? (L - mE - mD) / 2 : (i * (L - mE - mD)) / (rotulosX.length - 1));
   const y = (v: number) => mT + (A - mT - mB) * (1 - v / max);
   const marcas = [0, max / 4, max / 2, (3 * max) / 4, max];
