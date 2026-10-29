@@ -50,6 +50,12 @@ export const TIPOS = [
 
 export const corDaCategoria = (c: string) => CATEGORIAS.find(x => x.nome === c)?.cor ?? SERIES[4];
 
+// Siglas das equipes da Atenção Primária, por extenso
+const EQUIPES: Record<string, string> = { ESF: 'Saúde da Família', ESB: 'Saúde Bucal' };
+/** 'ESB' -> 'Saúde Bucal (ESB)'; curto: 'Saúde Bucal' */
+export const nomeEquipe = (sigla: string, curto = false) =>
+  EQUIPES[sigla] ? (curto ? EQUIPES[sigla] : `${EQUIPES[sigla]} (${sigla})`) : sigla;
+
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 /** '2026-04-01' + '2026-09-30' -> 'abr–set/2026' */
 export function periodoTexto(inicio: string, fim: string) {
@@ -78,7 +84,7 @@ export async function buscarProfissionais(unidadeId: string) {
 }
 
 /** Resumo do período mais recente: total, média mensal, por equipe × categoria e por equipe × tipo */
-export function resumirProducao(linhas: Producao[], nomeEquipe: (p: Producao) => string = p => p.equipe) {
+export function resumirProducao(linhas: Producao[], rotuloEquipe: (p: Producao) => string = p => nomeEquipe(p.equipe)) {
   if (!linhas.length) return null;
   const inicio = linhas.map(l => l.inicio).sort().at(-1)!;
   const doPeriodo = linhas.filter(l => l.inicio === inicio);
@@ -88,7 +94,7 @@ export function resumirProducao(linhas: Producao[], nomeEquipe: (p: Producao) =>
   const equipes = [...new Map(doPeriodo.map(l => [`${l.unidade_id}|${l.equipe}`, l])).values()];
   const linhaDe = (dim: 'categoria' | 'tipo', nomes: string[]) =>
     equipes.map(e => ({
-      rotulo: nomeEquipe(e),
+      rotulo: rotuloEquipe(e),
       valores: nomes.map(n => doPeriodo.find(l => l.unidade_id === e.unidade_id && l.equipe === e.equipe && l.dimensao === dim && l.item === n)?.quantidade ?? 0),
     }));
   const categorias = CATEGORIAS.filter(c => porCategoria.some(l => l.item === c.nome));

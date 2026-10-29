@@ -9,7 +9,7 @@ import { mesAno, NOME_PAPEL, numeroBR, ultimosMeses } from '../lib/util';
 import { Cabecalho, Carregando, Erro } from '../components/ui';
 import { BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Linhas, Numero, SeloSituacao, SERIES } from '../components/graficos';
 import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../lib/paineis';
-import { buscarProducao, resumirProducao, TIPOS } from '../lib/producao';
+import { buscarProducao, nomeEquipe, resumirProducao, TIPOS } from '../lib/producao';
 import { buscarCamposFicha } from './config/CamposFicha';
 import { preenchimentoFicha } from './ubs/AbaFicha';
 
@@ -130,7 +130,9 @@ export function Inicio() {
     ? unidades.slice(0, 5).map((u, i) => ({ nome: u.nome, cor: SERIES[i], ...serieMensal(lancamentos12.filter(l => l.unidade_id === u.id), indicadorProd.id, 12, 'numerador') }))
     : [];
   const nomeUBS = (id: string) => unidades.find(u => u.id === id)?.nome ?? '';
-  const prod = resumirProducao(producao, p => `${nomeUBS(p.unidade_id)} · ${p.equipe}`);
+  // UBS com uma equipe só aparece pelo nome; com mais de uma (ex.: Prado), "Prado · Saúde Bucal"
+  const variasEquipes = (id: string) => new Set(producao.filter(p => p.unidade_id === id).map(p => p.equipe)).size > 1;
+  const prod = resumirProducao(producao, p => (variasEquipes(p.unidade_id) ? `${nomeUBS(p.unidade_id)} · ${nomeEquipe(p.equipe, true)}` : nomeUBS(p.unidade_id)));
   const registrosDaUBS = (id: string) => producao.filter(p => p.unidade_id === id && p.dimensao === 'categoria' && p.inicio === prod?.inicio).reduce((s, p) => s + p.quantidade, 0);
   const temProducao = seriesProd.some(s => s.pontos.some(p => p !== null));
   const valorNoUltimo = (uid: string, iid: string) =>
@@ -195,10 +197,10 @@ export function Inicio() {
         {prod && (
           <>
             <CartaoGrafico
-              titulo="Registros por equipe"
+              titulo="Registros por UBS e equipe"
               subtitulo={`Total de ${prod.periodo}, por categoria profissional · e-SUS`}
               tabela={{
-                cabecalho: ['Equipe', ...prod.categorias.map(c => c.nome), 'Total', 'Média mensal'],
+                cabecalho: ['UBS / equipe', ...prod.categorias.map(c => c.nome), 'Total', 'Média mensal'],
                 linhas: prod.porCategoria.map(l => {
                   const t = l.valores.reduce((a, b) => a + b, 0);
                   return [l.rotulo, ...l.valores, t, Math.round(t / prod.meses)];
@@ -209,8 +211,8 @@ export function Inicio() {
             </CartaoGrafico>
             <CartaoGrafico
               titulo="Tipo de atendimento"
-              subtitulo="Proporção de cada tipo em cada equipe"
-              tabela={{ cabecalho: ['Equipe', ...TIPOS.map(t => t.curto)], linhas: prod.porTipo.map(l => [l.rotulo, ...l.valores]) }}
+              subtitulo="Proporção de cada tipo em cada UBS e equipe"
+              tabela={{ cabecalho: ['UBS / equipe', ...TIPOS.map(t => t.curto)], linhas: prod.porTipo.map(l => [l.rotulo, ...l.valores]) }}
             >
               <BarrasEmpilhadasH series={TIPOS.map(t => ({ nome: t.curto, cor: t.cor }))} linhas={prod.porTipo} percentual />
             </CartaoGrafico>

@@ -6,7 +6,7 @@ import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
 import type { Aplicacao, Atividade, CampoFicha, Coleta, Competencia, Equipe, Pendencia, Questionario, Unidade } from '../../lib/types';
 import { dataBR, mesAno, numeroBR, ultimosMeses } from '../../lib/util';
 import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../../lib/paineis';
-import { buscarProducao, buscarProfissionais, corDaCategoria, resumirProducao, TIPOS } from '../../lib/producao';
+import { buscarProducao, buscarProfissionais, corDaCategoria, nomeEquipe, resumirProducao, TIPOS } from '../../lib/producao';
 import { Carregando, Erro } from '../../components/ui';
 import {
   BarraMeta, BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Legenda, Linhas, Numero, SeloSituacao,
@@ -83,8 +83,9 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
   // ---- produção registrada no e-SUS (planilha da Célula 3) ----
   const prod = resumirProducao(producao);
   const nomesVisiveis = profissionais.some(p => p.nome_visivel);
+  const variasEquipes = new Set(profissionais.map(p => p.equipe)).size > 1;
   const itensProf = profissionais.map(p => ({
-    rotulo: `${p.nome} · ${p.equipe}`,
+    rotulo: variasEquipes ? `${p.nome} · ${nomeEquipe(p.equipe, true)}` : p.nome,
     valor: p.quantidade,
     cor: corDaCategoria(p.categoria),
     detalhe: `${p.categoria} · ≈${numeroBR(p.quantidade / (prod?.meses ?? 6), 0)} por mês`,
@@ -99,7 +100,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
             icone={<Activity size={15} strokeWidth={2} />}
             rotulo={`Registros no e-SUS · ${prod.periodo}`}
             valor={numeroBR(prod.total, 0)}
-            detalhe={`≈${numeroBR(prod.mediaMensal, 0)} por mês · equipes ${prod.porCategoria.map(e => e.rotulo).join(' e ')}`}
+            detalhe={`≈${numeroBR(prod.mediaMensal, 0)} por mês · ${prod.porCategoria.length > 1 ? 'equipes' : 'equipe'} ${prod.porCategoria.map(e => e.rotulo).join(' e ')}`}
           />
         )}
         <Numero
@@ -156,7 +157,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
             tabela={{
               cabecalho: ['Profissional', 'Equipe', 'Categoria', 'Registros', 'Média mensal', 'Horas/semana', 'Dias/turnos', 'Tempo por consulta', 'Validação'],
               linhas: profissionais.map(p => [
-                p.nome, p.equipe, p.categoria, p.quantidade, Math.round(p.quantidade / (prod?.meses ?? 6)),
+                p.nome, nomeEquipe(p.equipe), p.categoria, p.quantidade, Math.round(p.quantidade / (prod?.meses ?? 6)),
                 p.horas_semana ?? '—', p.dias_turnos ?? '—', p.tempo_consulta ?? '—', p.status_validacao ?? '—',
               ]),
             }}

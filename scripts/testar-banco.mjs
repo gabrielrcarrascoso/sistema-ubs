@@ -40,13 +40,13 @@ await t('U2 inativo ve unidades?', await como(U2, `select count(*) from public.u
 await t('U1 gestor ve unidades (3 arquivadas + 2 da planilha)', await como(U1, `select count(*) from public.unidades`), [{count:5}]);
 await t('U2 tenta virar gestor', await como(U2, `update public.perfis set papel='gestor' where id='${U2}' returning papel`), /Somente gestores/);
 await t('U1 promove U2 a coordenador sem unidade', await como(U1, `update public.perfis set papel='coordenador', ativo=true where id='${U2}' returning papel`), /precisa estar vinculado/);
-await t('U1 promove U2 a coordenador Maria Panta', await como(U1, `update public.perfis set papel='coordenador', ativo=true, unidade_id=(select id from public.unidades where slug='maria') where id='${U2}' returning papel`), [{papel:'coordenador'}]);
-await t('U2 edita equipe Maria Panta', await como(U2, `update public.equipes set quantidade=2 where cargo='Dentista' and unidade_id=(select id from public.unidades where slug='maria') returning quantidade`), [{quantidade:2}]);
+await t('U1 promove U2 a coordenador do Prado', await como(U1, `update public.perfis set papel='coordenador', ativo=true, unidade_id=(select id from public.unidades where slug='prado') where id='${U2}' returning papel`), [{papel:'coordenador'}]);
+await t('U2 edita equipe do Prado', await como(U2, `update public.equipes set quantidade=2 where cargo='Dentista' and unidade_id=(select id from public.unidades where slug='prado') returning quantidade`), [{quantidade:2}]);
 await t('U2 edita equipe Riachinho Tarde (deve 0 linhas)', await como(U2, `update public.equipes set quantidade=9 where unidade_id=(select id from public.unidades where slug='tarde') returning quantidade`), []);
-await t('U2 edita competencia Maria', await como(U2, `update public.competencias c set nivel='executa' from public.equipes e where e.id=c.equipe_id and e.cargo='ACS' and e.unidade_id=(select id from public.unidades where slug='maria') and c.atividade_id=(select id from public.atividades where nome='Vacinação') returning c.nivel`), [{nivel:'executa'}]);
-await t('U2 lanca indicador com denominador 0', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='maria'), '2026-09-15', 10, 0, 'PEC') returning id`), /denominador maior que zero/);
-await t('U2 lanca indicador valido', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='maria'), '2026-09-15', 92, 100, 'PEC') returning competencia, versao_formula`), /"versao_formula":1/);
-await t('U2 lanca duplicado', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='maria'), '2026-09-01', 1, 2, 'PEC') returning id`), /duplicate key/);
+await t('U2 edita competencia do Prado', await como(U2, `update public.competencias c set nivel='executa' from public.equipes e where e.id=c.equipe_id and e.cargo='ACS' and e.unidade_id=(select id from public.unidades where slug='prado') and c.atividade_id=(select id from public.atividades where nome='Vacinação') returning c.nivel`), [{nivel:'executa'}]);
+await t('U2 lanca indicador com denominador 0', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='prado'), '2026-09-15', 10, 0, 'PEC') returning id`), /denominador maior que zero/);
+await t('U2 lanca indicador valido', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='prado'), '2026-09-15', 92, 100, 'PEC') returning competencia, versao_formula`), /"versao_formula":1/);
+await t('U2 lanca duplicado', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values ((select id from public.indicadores where codigo='QUAL-01'), (select id from public.unidades where slug='prado'), '2026-09-01', 1, 2, 'PEC') returning id`), /duplicate key/);
 await t('U2 lanca em outra unidade', await como(U2, `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, fonte) values ((select id from public.indicadores where codigo='PROD-01'), (select id from public.unidades where slug='tarde'), '2026-09-01', 500, 'PEC') returning id`), /row-level security/);
 await t('U1 muda formula -> versao', await como(U1, `update public.indicadores set fator=1000 where codigo='QUAL-01' returning versao`), [{versao:2}]);
 await t('U1 v_lancamentos', await como(U1, `select codigo, unidade_nome, valor from public.v_lancamentos`), /"valor":"92.00"/);
@@ -56,12 +56,12 @@ await t('U1 tenta se rebaixar (unico gestor)', await como(U1, `update public.per
 await t('anon le unidades', await (async()=>{ await db.exec(`set role anon`); try { return (await db.query('select count(*) from public.unidades')).rows } catch(e){ return 'EXCECAO: '+e.message } finally { await db.exec('reset role') } })(), /permission denied/);
 
 // ---------- Ficha da UBS e questionários ----------
-const MARIA = `(select id from public.unidades where slug='maria')`, TARDE = `(select id from public.unidades where slug='tarde')`;
+const MARIA = `(select id from public.unidades where slug='prado')`, TARDE = `(select id from public.unidades where slug='tarde')`;
 await t('ficha padrao tem 18 campos', await como(U1, `select count(*) from public.campos_ficha`), [{count:18}]);
 await t('adm da UBS nao cria campo da ficha', await como(U2, `insert into public.campos_ficha (nome) values ('x') returning id`), /row-level security/);
 await t('adm da UBS edita ficha da propria UBS', await como(U2, `update public.unidades set dados_ficha = dados_ficha || '{"teste": "ok"}' where id=${MARIA} returning dados_ficha->>'teste' as v`), [{v:'ok'}]);
 await t('adm da UBS nao edita ficha de outra UBS', await como(U2, `update public.unidades set nome='x' where id=${TARDE} returning id`), []);
-await t('adm da UBS nao reativa/desativa a UBS', await como(U2, `update public.unidades set ativa=true where id=${MARIA} returning id`), /administrador geral/);
+await t('adm da UBS nao desativa a UBS', await como(U2, `update public.unidades set ativa=false where id=${MARIA} returning id`), /administrador geral/);
 await t('adm da UBS nao cria UBS', await como(U2, `insert into public.unidades (slug, nome) values ('nova','Nova') returning id`), /row-level security/);
 await t('rascunho invisivel para adm da UBS', await como(U2, `select count(*) from public.questionarios`), [{count:0}]);
 await t('perguntas do rascunho invisiveis', await como(U2, `select count(*) from public.perguntas`), [{count:0}]);
@@ -74,21 +74,27 @@ await t('gestor encerra questionario', await como(U1, `update public.questionari
 await t('encerrado nao recebe respostas', await como(U2, `insert into public.aplicacoes (questionario_id, unidade_id, respostas) values ((select id from public.questionarios limit 1), ${MARIA}, '{}') returning id`), /row-level security/);
 
 // ---------- Dados da planilha da Célula 3 (produção e-SUS) ----------
-const RIACHINHO = `(select id from public.unidades where slug='riachinho')`, PRADO = `(select id from public.unidades where slug='prado')`;
-// Os nomes reais ficam fora do repositório; aqui usamos nomes fictícios (Carla está em duas equipes)
+const PRADO = `(select id from public.unidades where slug='prado')`, R1 = `(select id from public.unidades where slug='riachinho-1')`, R2 = `(select id from public.unidades where slug='riachinho-2')`;
+// Os nomes reais ficam fora do repositório; aqui usamos nomes fictícios (Carla está nas duas equipes do Prado)
 await como(null, `insert into public.producao_profissionais (unidade_id, equipe, nome, categoria, quantidade, inicio, fim, fonte) values
   (${PRADO}, 'ESF', 'Ana Teste', 'Médico', 10, '2026-04-01', '2026-09-30', 'teste'),
   (${PRADO}, 'ESF', 'Bruno Teste', 'Médico', 5, '2026-04-01', '2026-09-30', 'teste'),
-  (${RIACHINHO}, 'ESF I', 'Carla Teste', 'Médico', 3, '2026-04-01', '2026-09-30', 'teste'),
-  (${RIACHINHO}, 'ESF II', 'Carla Teste', 'Médico', 4, '2026-04-01', '2026-09-30', 'teste'),
-  (${RIACHINHO}, 'ESF II', 'Davi Teste', 'Enfermeiro', 2, '2026-04-01', '2026-09-30', 'teste')`);
-await t('UBS ativas sao as da planilha', await como(U1, `select string_agg(nome, ',' order by nome) as n from public.unidades where ativa`), [{n:'Prado,Riachinho'}]);
-await t('matriz do Prado tem 5 cargos x 13 atividades', await como(U1, `select count(*) from public.competencias c join public.equipes e on e.id=c.equipe_id join public.unidades u on u.id=e.unidade_id where u.slug='prado'`), [{count:65}]);
+  (${PRADO}, 'ESF', 'Carla Teste', 'Médico', 3, '2026-04-01', '2026-09-30', 'teste'),
+  (${PRADO}, 'ESB', 'Carla Teste', 'Médico', 4, '2026-04-01', '2026-09-30', 'teste'),
+  (${R2}, 'ESF', 'Davi Teste', 'Enfermeiro', 2, '2026-04-01', '2026-09-30', 'teste')`);
+await t('UBS ativas: Prado, Riachinho I e II', await como(U1, `select string_agg(nome, ',' order by nome) as n from public.unidades where ativa`), [{n:'Prado,Riachinho I,Riachinho II'}]);
+await t('Prado guarda o historico da Maria Panta', await como(U1, `select count(*)::int as n from public.unidades where slug in ('maria', 'riachinho')`), [{n:0}]);
+await t('equipe do Prado juntou planilha + levantamento', await como(U1, `select string_agg(cargo || '=' || coalesce(quantidade::text, '-'), ',' order by cargo) as e from public.equipes where unidade_id=${PRADO} and cargo in ('ACS', 'Médico(a)', 'Técnico(a) de enfermagem')`), [{e:'ACS=7,Médico(a)=2,Técnico(a) de enfermagem=2'}]);
+await t('Prado com 16 profissionais', await como(U1, `select profissionais_declarados as n from public.unidades where id=${PRADO}`), [{n:16}]);
+await t('matriz do Riachinho I tem 4 cargos x 13 atividades', await como(U1, `select count(*)::int as n from public.competencias c join public.equipes e on e.id=c.equipe_id where e.unidade_id=${R1}`), [{n:52}]);
+await t('producao separada por UBS', await como(U1, `select string_agg(u.nome || '=' || t.s, ',' order by u.nome) as p from (select unidade_id, sum(quantidade)::int s from public.producao where dimensao='categoria' group by unidade_id) t join public.unidades u on u.id=t.unidade_id`), [{p:'Prado=4440,Riachinho I=1997,Riachinho II=2862'}]);
+await t('equipes do Prado: ESB e ESF', await como(U1, `select string_agg(distinct equipe, ',') as e from public.producao where unidade_id=${PRADO}`), [{e:'ESB,ESF'}]);
+await t('cada Riachinho recebeu suas pendencias', await como(U1, `select count(*) filter (where unidade_id=${R1})::int as r1, count(*) filter (where unidade_id=${R2})::int as r2 from public.pendencias`), [{r1:3,r2:3}]);
 await t('total de registros = 9299', await como(U2, `select sum(quantidade)::int as s from public.producao where dimensao='categoria'`), [{s:9299}]);
 await t('tipos de atendimento somam o mesmo total', await como(U2, `select sum(quantidade)::int as s from public.producao where dimensao='tipo'`), [{s:9299}]);
 await t('adm da UBS nao le tabela com nomes', await como(U2, `select count(*) from public.producao_profissionais`), [{count:0}]);
 await t('adm da UBS ve profissionais sem nome', await como(U2, `select count(*)::int as n, bool_and(nome ~ '^(Médico|Enfermeiro|Dentista) [0-9]+$') as anonimo, bool_or(nome_visivel) as visivel from public.v_producao_profissionais`), [{n:5,anonimo:true,visivel:false}]);
-await t('mesma pessoa em 2 equipes tem o mesmo rotulo', await como(U2, `select count(distinct nome)::int as n from public.v_producao_profissionais where unidade_id=${RIACHINHO} and categoria='Médico'`), [{n:1}]);
+await t('mesma pessoa em 2 equipes tem o mesmo rotulo', await como(U2, `select count(*)::int as linhas, count(distinct nome)::int as rotulos from public.v_producao_profissionais where unidade_id=${PRADO}`), [{linhas:4,rotulos:3}]);
 await t('gestor ve os nomes', await como(U1, `select bool_and(nome_visivel) as visivel, count(*) filter (where nome like 'Ana%')::int as ana from public.v_producao_profissionais`), [{visivel:true,ana:1}]);
 await t('adm da UBS nao altera nomes', await como(U2, `update public.producao_profissionais set nome='x' returning id`), []);
 await t('anon nao le profissionais', await (async()=>{ await db.exec(`set role anon`); try { return (await db.query('select count(*) from public.v_producao_profissionais')).rows } catch(e){ return 'EXCECAO: '+e.message } finally { await db.exec('reset role') } })(), /permission denied/);
