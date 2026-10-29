@@ -139,7 +139,7 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
 
       <Painel
         titulo="Matriz: quem faz cada atividade"
-        acoes={<input className="nao-imprimir" placeholder="Buscar atividade…" value={busca} onChange={e => setBusca(e.target.value)} style={{ border: '1px solid #d8e3ec', borderRadius: 8, padding: '7px 10px' }} />}
+        acoes={<input placeholder="Buscar atividade…" value={busca} onChange={e => setBusca(e.target.value)} className="nao-imprimir select-simples" />}
       >
         <div className="tablewrap">
           <table className="matrix">

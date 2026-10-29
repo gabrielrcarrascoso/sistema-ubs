@@ -4,12 +4,14 @@ import { useAuth } from '../auth/AuthProvider';
 import { enderecoDoSite, supabase, traduzErro } from '../lib/supabase';
 import { Campo, Carregando, Erro } from '../components/ui';
 import { MarcaComNome } from '../components/Marca';
+import { BotaoTema } from '../components/BotaoTema';
 
 // Telas de acesso: login, cadastro, recuperação de senha e espera por aprovação
 
 function CaixaAcesso({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <div className="auth-page">
+      <div className="auth-tema"><BotaoTema /></div>
       <div className="auth-box">
         <div className="brand">
           <MarcaComNome />

@@ -123,7 +123,7 @@ export function QuestionarioResultados() {
               {aplicacoes.length > 0 &&
                 perguntas.map((p, i) => (
                   <div className="resultado" key={p.id}>
-                    <b><span className="num" style={{ color: '#147d79' }}>{i + 1}.</span> {p.enunciado}</b>
+                    <b><span className="num" style={{ color: 'var(--primario-texto)' }}>{i + 1}.</span> {p.enunciado}</b>
                     <ResumoPergunta pergunta={p} aplicacoes={aplicacoes} nomeUBS={nomeUBS} />
                   </div>
                 ))}
@@ -143,7 +143,7 @@ export function QuestionarioResultados() {
                   <tbody>
                     {perguntas.map((p, i) => (
                       <tr key={p.id}>
-                        <td><span className="num" style={{ color: '#147d79', fontWeight: 800 }}>{i + 1}.</span> {p.enunciado}</td>
+                        <td><span className="num" style={{ color: 'var(--primario-texto)', fontWeight: 800 }}>{i + 1}.</span> {p.enunciado}</td>
                         {ultimaPorUBS.map(a => (
                           <td key={a.id}>{vazio(a.respostas[p.id]) ? <span className="none">—</span> : mostrarValor(p.tipo, a.respostas[p.id])}</td>
                         ))}

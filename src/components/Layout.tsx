@@ -3,6 +3,7 @@ import { BarChart3, ClipboardList, Hospital, House, LogOut, Settings } from 'luc
 import { useAuth } from '../auth/AuthProvider';
 import { NOME_PAPEL } from '../lib/util';
 import { MarcaComNome } from './Marca';
+import { BotaoTema } from './BotaoTema';
 
 // Moldura das telas internas: menu lateral (poucas opções, de propósito) + conteúdo
 export function Layout() {
@@ -31,7 +32,10 @@ export function Layout() {
             </NavLink>
             {perfil && NOME_PAPEL[perfil.papel]}
           </div>
-          <button onClick={sair}><LogOut size={13} strokeWidth={1.8} /> Sair</button>
+          <div className="side-botoes">
+            <BotaoTema comRotulo />
+            <button onClick={sair}><LogOut size={13} strokeWidth={1.8} /> Sair</button>
+          </div>
         </div>
       </aside>
 

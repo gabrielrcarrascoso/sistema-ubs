@@ -26,7 +26,7 @@ export function GraficoBarras({
   return (
     <div className="chart">
       <svg viewBox={`0 0 ${largura} ${altura}`} role="img" aria-label="Gráfico por período">
-        <line x1={0} x2={largura} y1={y(0)} y2={y(0)} stroke="#dbe4ec" />
+        <line x1={0} x2={largura} y1={y(0)} y2={y(0)} style={{ stroke: 'var(--line)' }} />
         {pontos.map((p, i) => {
           const cx = margem.esq + passo * i + passo / 2;
           return (
@@ -39,11 +39,11 @@ export function GraficoBarras({
                     width={barra}
                     height={Math.max(0, y(0) - y(p.valor))}
                     rx={5}
-                    fill="#2a9d8f"
+                    style={{ fill: 'var(--serie1)' }}
                   >
                     <title>{`${p.rotulo}: ${p.valor.toLocaleString('pt-BR')}${sufixo}`}</title>
                   </rect>
-                  <text x={cx} y={y(p.valor) - 6} textAnchor="middle" style={{ fill: '#162942', fontWeight: 700 }}>
+                  <text x={cx} y={y(p.valor) - 6} textAnchor="middle" style={{ fill: 'var(--text)', fontWeight: 700 }}>
                     {p.valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
                     {sufixo}
                   </text>
@@ -61,8 +61,8 @@ export function GraficoBarras({
         })}
         {meta !== null && meta !== undefined && (
           <g>
-            <line x1={0} x2={largura} y1={y(meta)} y2={y(meta)} stroke="#d08a1e" strokeDasharray="6 5" />
-            <text x={largura - 4} y={y(meta) - 5} textAnchor="end" style={{ fill: '#a0660f', fontWeight: 700 }}>
+            <line x1={0} x2={largura} y1={y(meta)} y2={y(meta)} style={{ stroke: 'var(--aviso)' }} strokeDasharray="6 5" />
+            <text x={largura - 4} y={y(meta) - 5} textAnchor="end" style={{ fill: 'var(--aviso-texto)', fontWeight: 700 }}>
               meta {meta.toLocaleString('pt-BR')}
               {sufixo}
             </text>

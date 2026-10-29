@@ -4,19 +4,20 @@ import { AlertTriangle, CheckCircle2, MinusCircle, Table2, BarChart3 } from 'luc
 // ---------------------------------------------------------------------------
 // Gráficos do sistema (SVG/HTML puros, sem biblioteca externa).
 // Paleta validada (inclusive para daltonismo) — a ordem das cores é fixa.
+// Os tons ficam no CSS (styles.css, --serie1…) e mudam sozinhos entre modo escuro e claro.
 // ---------------------------------------------------------------------------
 export const CORES = {
-  serie1: '#00897a', // verde-petróleo
-  serie2: '#d2602a', // terracota
-  serie3: '#2f6fd0', // azul
-  serie4: '#c98f00', // mostarda (pouco contraste: sempre com legenda/rótulo/tabela)
-  serie5: '#a5528f', // ameixa
+  serie1: 'var(--serie1)', // verde-petróleo
+  serie2: 'var(--serie2)', // terracota
+  serie3: 'var(--serie3)', // azul
+  serie4: 'var(--serie4)', // mostarda (pouco contraste no claro: sempre com legenda/rótulo/tabela)
+  serie5: 'var(--serie5)', // ameixa
   // situação (reservadas — sempre com ícone + texto)
-  bom: '#0ca30c',
-  atencao: '#fab219',
-  serio: '#ec835a',
-  critico: '#d03b3b',
-  neutro: '#c9c3b6',
+  bom: 'var(--bom)',
+  atencao: 'var(--atencao)',
+  serio: 'var(--serio)',
+  critico: 'var(--critico)',
+  neutro: 'var(--serie-neutra)',
 } as const;
 export const SERIES = [CORES.serie1, CORES.serie2, CORES.serie3, CORES.serie4, CORES.serie5];
 
@@ -272,10 +273,10 @@ export function Linhas({
           if (atual) trechos.push(atual);
           return (
             <g key={s.nome}>
-              {trechos.map((d, k) => <path key={k} d={d} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />)}
+              {trechos.map((d, k) => <path key={k} d={d} fill="none" style={{ stroke: s.cor }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />)}
               {s.pontos.map((p, i) =>
                 p !== null && (foco === i || s.pontos.length === 1 || i === lastIndex(s.pontos)) ? (
-                  <circle key={i} cx={x(i)} cy={y(p)} r={4.5} fill={s.cor} stroke="#fff" strokeWidth={2} />
+                  <circle key={i} cx={x(i)} cy={y(p)} r={4.5} style={{ fill: s.cor, stroke: 'var(--superficie)' }} strokeWidth={2} />
                 ) : null,
               )}
             </g>
