@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useConfirmar } from '../../components/Confirmacao';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok } from '../../lib/hooks';
-import { calcularValor, excedeDenominador } from '../../lib/indicadores';
+import { calcularValor, descreverFormula, excedeDenominador } from '../../lib/indicadores';
 import type { Indicador, Lancamento, Unidade } from '../../lib/types';
 import { atingiuMeta, lerNumeroBR, mesAno, valorIndicador } from '../../lib/util';
 import { Campo, Erro, Modal } from '../../components/ui';
@@ -145,7 +145,7 @@ export function LancarMes({
                     <td>
                       <b>{i.nome}</b>
                       {existentes.has(i.id) && <span className="chip neutral" style={{ marginLeft: 6 }}>já lançado</span>}
-                      <div className="muted" style={{ fontSize: 11.5 }}>{i.numerador_desc}{i.denominador_desc ? ` ÷ ${i.denominador_desc}` : ''}</div>
+                      <div className="muted" style={{ fontSize: 11.5 }}>{descreverFormula(i)}</div>
                     </td>
                     <td className="num">
                       <input

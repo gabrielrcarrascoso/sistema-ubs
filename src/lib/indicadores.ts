@@ -4,10 +4,15 @@ import type { Indicador, Lancamento } from './types';
 
 // Regras de cálculo dos indicadores — as MESMAS em todas as telas (fórmulas padronizadas)
 
+// Ordem de exibição: ativos primeiro; entre eles, os da tese (I1–I6) antes dos complementares (C1, C2)
+const grupoDoCodigo = (c: string) => (c.startsWith('I') ? 0 : c.startsWith('C') ? 1 : 2);
+export const ordenarIndicadores = (a: Indicador, b: Indicador) =>
+  Number(b.ativo) - Number(a.ativo) || grupoDoCodigo(a.codigo) - grupoDoCodigo(b.codigo) || a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true });
+
 export async function buscarIndicadores(somenteAtivos = false): Promise<Indicador[]> {
-  let q = supabase.from('indicadores').select('*').order('codigo');
+  let q = supabase.from('indicadores').select('*');
   if (somenteAtivos) q = q.eq('ativo', true);
-  return ok(await q);
+  return ok<Indicador[]>(await q).sort(ordenarIndicadores);
 }
 
 export async function buscarLancamentos(filtro: { desde?: string; unidadeId?: string; indicadorId?: string } = {}) {

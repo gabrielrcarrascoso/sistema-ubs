@@ -91,7 +91,13 @@ export function resumirProducao(linhas: Producao[], rotuloEquipe: (p: Producao) 
   const fim = doPeriodo[0].fim;
   const meses = mesesNoPeriodo(inicio, fim);
   const porCategoria = doPeriodo.filter(l => l.dimensao === 'categoria');
-  const equipes = [...new Map(doPeriodo.map(l => [`${l.unidade_id}|${l.equipe}`, l])).values()];
+  const ordemEquipe = (e: string) => (e.startsWith('ESF') ? 0 : 1);
+  const equipes = [...new Map(doPeriodo.map(l => [`${l.unidade_id}|${l.equipe}`, l])).values()].sort(
+    (a, b) =>
+      a.unidade_id === b.unidade_id
+        ? ordemEquipe(a.equipe) - ordemEquipe(b.equipe)
+        : rotuloEquipe(a).split(' · ')[0].localeCompare(rotuloEquipe(b).split(' · ')[0], 'pt-BR'),
+  );
   const linhaDe = (dim: 'categoria' | 'tipo', nomes: string[]) =>
     equipes.map(e => ({
       rotulo: rotuloEquipe(e),

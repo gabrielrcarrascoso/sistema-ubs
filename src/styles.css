@@ -803,7 +803,7 @@ tr:hover td { background: var(--superficie-2); }
 .lista-compacta-item:last-child { border-bottom: 0; }
 
 /* tarefas (Início) */
-.tarefas { gap: 8px; }
+.tarefas { gap: 8px; grid-template-columns: minmax(0, 1fr); }
 .tarefa { width: 100%; font: inherit; text-align: left; cursor: pointer; border: 1px solid var(--linha-2); background: var(--superficie-2); border-radius: 14px; padding: 11px 12px; gap: 12px; color: var(--text); }
 .tarefa:hover { border-color: var(--primario-borda); background: var(--primario-suave); }
 .tarefa .icone { width: 34px; height: 34px; border-radius: 10px; background: var(--primario-suave); color: var(--primario-texto); }
