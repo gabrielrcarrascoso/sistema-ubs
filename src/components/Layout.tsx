@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { BarChart3, ClipboardList, Hospital, House, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { NOME_PAPEL } from '../lib/util';
+import { MarcaComNome } from './Marca';
 
 // Moldura das telas internas: menu lateral (poucas opções, de propósito) + conteúdo
 export function Layout() {
@@ -12,11 +13,7 @@ export function Layout() {
     <div className="app">
       <aside className="side">
         <div className="brand">
-          <span className="logo">UBS</span>
-          <span>
-            <strong>Sistema UBS</strong>
-            <small>Salgueiro · PE</small>
-          </span>
+          <MarcaComNome claro />
         </div>
 
         <nav className="menu" aria-label="Menu principal">

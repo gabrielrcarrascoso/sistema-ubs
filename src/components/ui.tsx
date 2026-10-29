@@ -28,6 +28,11 @@ export function Painel({ titulo, acoes, children }: { titulo: string; acoes?: Re
   );
 }
 
+const hoje = () => {
+  const t = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
 export function Cabecalho({ titulo, subtitulo, acoes }: { titulo: string; subtitulo: string; acoes?: ReactNode }) {
   useEffect(() => {
     document.title = `${titulo} · Sistema UBS`;
@@ -35,6 +40,7 @@ export function Cabecalho({ titulo, subtitulo, acoes }: { titulo: string; subtit
   return (
     <div className="top">
       <div>
+        <div className="data-hoje">{hoje()}</div>
         <h1>{titulo}</h1>
         <p>{subtitulo}</p>
       </div>

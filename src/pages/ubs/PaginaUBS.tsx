@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileText, Flag, Hospital, MapPin, Plus, Printer, Users } from 'lucide-react';
+import { Download, FileText, Flag, Hospital, LayoutDashboard, MapPin, Plus, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta, useUnidadeEscolhida } from '../../lib/hooks';
 import type { Unidade } from '../../lib/types';
@@ -8,12 +8,14 @@ import { BarraDeAbas, Cabecalho, Carregando, Erro, useAba, type DefAba } from '.
 import { mostrarValor, vazio } from '../../components/CampoDinamico';
 import { buscarCamposFicha } from '../config/CamposFicha';
 import { AbaFicha } from './AbaFicha';
+import { AbaPainel } from './AbaPainel';
 import { AbaEquipe } from './AbaEquipe';
 import { AbaRestricoes } from './AbaRestricoes';
 import { AbaColetas } from './AbaColetas';
 import { ModalFicha } from './ModalFicha';
 
 const ABAS: DefAba[] = [
+  { id: 'painel', rotulo: 'Painel', icone: LayoutDashboard },
   { id: 'ficha', rotulo: 'Ficha', icone: FileText },
   { id: 'equipe', rotulo: 'Equipe e atividades', icone: Users },
   { id: 'restricoes', rotulo: 'Restrições e pendências', icone: Flag },
@@ -26,7 +28,7 @@ export function PaginaUBS() {
   const unidadesQ = useConsulta(buscarUnidades, [], 'unidades');
   const camposQ = useConsulta(() => buscarCamposFicha(true), [], 'campos-ficha');
   const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
-  const [aba, setAba] = useAba(ABAS, 'ficha');
+  const [aba, setAba] = useAba(ABAS, 'painel');
   const [modal, setModal] = useState<Partial<Unidade> | null>(null);
 
   if (unidadesQ.carregando || camposQ.carregando) return <Carregando />;
@@ -81,6 +83,7 @@ export function PaginaUBS() {
         <>
           <BarraDeAbas abas={ABAS} atual={aba} aoMudar={setAba} />
           {/* key={u.id}: ao trocar de UBS, a aba recomeça do zero */}
+          {aba === 'painel' && <AbaPainel key={u.id} unidade={u} campos={campos} />}
           {aba === 'ficha' && <AbaFicha key={u.id} unidade={u} campos={campos} editavel={editavel} aoEditar={() => setModal(u)} />}
           {aba === 'equipe' && <AbaEquipe key={u.id} unidade={u} editavel={editavel} />}
           {aba === 'restricoes' && <AbaRestricoes key={u.id} unidade={u} unidades={unidades} />}

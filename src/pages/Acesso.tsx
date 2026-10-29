@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { enderecoDoSite, supabase, traduzErro } from '../lib/supabase';
 import { Campo, Carregando, Erro } from '../components/ui';
+import { MarcaComNome } from '../components/Marca';
 
 // Telas de acesso: login, cadastro, recuperação de senha e espera por aprovação
 
@@ -11,11 +12,7 @@ function CaixaAcesso({ titulo, children }: { titulo: string; children: ReactNode
     <div className="auth-page">
       <div className="auth-box">
         <div className="brand">
-          <span className="logo">UBS</span>
-          <span>
-            <strong>Sistema UBS</strong>
-            <small>Salgueiro/PE · Atenção Primária</small>
-          </span>
+          <MarcaComNome />
         </div>
         <h2>{titulo}</h2>
         {children}
