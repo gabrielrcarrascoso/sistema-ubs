@@ -37,7 +37,7 @@ const t = async (nome, r, esperado) => {
 };
 await t('perfis criados', await como(null, `select nome, papel, ativo from public.perfis order by email desc`), [{nome:'Gestora',papel:'gestor',ativo:true},{nome:'coord',papel:'profissional',ativo:false}]);
 await t('U2 inativo ve unidades?', await como(U2, `select count(*) from public.unidades`), [{count:0}]);
-await t('U1 gestor ve unidades', await como(U1, `select count(*) from public.unidades`), [{count:3}]);
+await t('U1 gestor ve unidades (3 arquivadas + 2 da planilha)', await como(U1, `select count(*) from public.unidades`), [{count:5}]);
 await t('U2 tenta virar gestor', await como(U2, `update public.perfis set papel='gestor' where id='${U2}' returning papel`), /Somente gestores/);
 await t('U1 promove U2 a coordenador sem unidade', await como(U1, `update public.perfis set papel='coordenador', ativo=true where id='${U2}' returning papel`), /precisa estar vinculado/);
 await t('U1 promove U2 a coordenador Maria Panta', await como(U1, `update public.perfis set papel='coordenador', ativo=true, unidade_id=(select id from public.unidades where slug='maria') where id='${U2}' returning papel`), [{papel:'coordenador'}]);
@@ -61,7 +61,7 @@ await t('ficha padrao tem 18 campos', await como(U1, `select count(*) from publi
 await t('adm da UBS nao cria campo da ficha', await como(U2, `insert into public.campos_ficha (nome) values ('x') returning id`), /row-level security/);
 await t('adm da UBS edita ficha da propria UBS', await como(U2, `update public.unidades set dados_ficha = dados_ficha || '{"teste": "ok"}' where id=${MARIA} returning dados_ficha->>'teste' as v`), [{v:'ok'}]);
 await t('adm da UBS nao edita ficha de outra UBS', await como(U2, `update public.unidades set nome='x' where id=${TARDE} returning id`), []);
-await t('adm da UBS nao desativa a UBS', await como(U2, `update public.unidades set ativa=false where id=${MARIA} returning id`), /administrador geral/);
+await t('adm da UBS nao reativa/desativa a UBS', await como(U2, `update public.unidades set ativa=true where id=${MARIA} returning id`), /administrador geral/);
 await t('adm da UBS nao cria UBS', await como(U2, `insert into public.unidades (slug, nome) values ('nova','Nova') returning id`), /row-level security/);
 await t('rascunho invisivel para adm da UBS', await como(U2, `select count(*) from public.questionarios`), [{count:0}]);
 await t('perguntas do rascunho invisiveis', await como(U2, `select count(*) from public.perguntas`), [{count:0}]);
@@ -72,6 +72,26 @@ await t('adm da UBS nao responde por outra UBS', await como(U2, `insert into pub
 await t('gestor ve respostas de todas', await como(U1, `select count(*) from public.aplicacoes`), [{count:1}]);
 await t('gestor encerra questionario', await como(U1, `update public.questionarios set status='encerrado' returning status`), [{status:'encerrado'}]);
 await t('encerrado nao recebe respostas', await como(U2, `insert into public.aplicacoes (questionario_id, unidade_id, respostas) values ((select id from public.questionarios limit 1), ${MARIA}, '{}') returning id`), /row-level security/);
+
+// ---------- Dados da planilha da Célula 3 (produção e-SUS) ----------
+const RIACHINHO = `(select id from public.unidades where slug='riachinho')`, PRADO = `(select id from public.unidades where slug='prado')`;
+// Os nomes reais ficam fora do repositório; aqui usamos nomes fictícios (Carla está em duas equipes)
+await como(null, `insert into public.producao_profissionais (unidade_id, equipe, nome, categoria, quantidade, inicio, fim, fonte) values
+  (${PRADO}, 'ESF', 'Ana Teste', 'Médico', 10, '2026-04-01', '2026-09-30', 'teste'),
+  (${PRADO}, 'ESF', 'Bruno Teste', 'Médico', 5, '2026-04-01', '2026-09-30', 'teste'),
+  (${RIACHINHO}, 'ESF I', 'Carla Teste', 'Médico', 3, '2026-04-01', '2026-09-30', 'teste'),
+  (${RIACHINHO}, 'ESF II', 'Carla Teste', 'Médico', 4, '2026-04-01', '2026-09-30', 'teste'),
+  (${RIACHINHO}, 'ESF II', 'Davi Teste', 'Enfermeiro', 2, '2026-04-01', '2026-09-30', 'teste')`);
+await t('UBS ativas sao as da planilha', await como(U1, `select string_agg(nome, ',' order by nome) as n from public.unidades where ativa`), [{n:'Prado,Riachinho'}]);
+await t('matriz do Prado tem 5 cargos x 13 atividades', await como(U1, `select count(*) from public.competencias c join public.equipes e on e.id=c.equipe_id join public.unidades u on u.id=e.unidade_id where u.slug='prado'`), [{count:65}]);
+await t('total de registros = 9299', await como(U2, `select sum(quantidade)::int as s from public.producao where dimensao='categoria'`), [{s:9299}]);
+await t('tipos de atendimento somam o mesmo total', await como(U2, `select sum(quantidade)::int as s from public.producao where dimensao='tipo'`), [{s:9299}]);
+await t('adm da UBS nao le tabela com nomes', await como(U2, `select count(*) from public.producao_profissionais`), [{count:0}]);
+await t('adm da UBS ve profissionais sem nome', await como(U2, `select count(*)::int as n, bool_and(nome ~ '^(Médico|Enfermeiro|Dentista) [0-9]+$') as anonimo, bool_or(nome_visivel) as visivel from public.v_producao_profissionais`), [{n:5,anonimo:true,visivel:false}]);
+await t('mesma pessoa em 2 equipes tem o mesmo rotulo', await como(U2, `select count(distinct nome)::int as n from public.v_producao_profissionais where unidade_id=${RIACHINHO} and categoria='Médico'`), [{n:1}]);
+await t('gestor ve os nomes', await como(U1, `select bool_and(nome_visivel) as visivel, count(*) filter (where nome like 'Ana%')::int as ana from public.v_producao_profissionais`), [{visivel:true,ana:1}]);
+await t('adm da UBS nao altera nomes', await como(U2, `update public.producao_profissionais set nome='x' returning id`), []);
+await t('anon nao le profissionais', await (async()=>{ await db.exec(`set role anon`); try { return (await db.query('select count(*) from public.v_producao_profissionais')).rows } catch(e){ return 'EXCECAO: '+e.message } finally { await db.exec('reset role') } })(), /permission denied/);
 
 console.log(falhas ?`\n${falhas} teste(s) falharam.` : '\nTodos os testes passaram.');
 process.exit(falhas ? 1 : 0);

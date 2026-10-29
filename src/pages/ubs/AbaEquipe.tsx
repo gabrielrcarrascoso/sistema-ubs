@@ -85,7 +85,7 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
       <Dica id="ubs-equipe">
         <ol>
           <li>Em <b>Equipe</b>, cadastre cada cargo e quantos profissionais existem (deixe em branco se não souber).</li>
-          <li>Na <b>Matriz</b>, {editavel ? 'clique numa célula para trocar' : 'veja'} o que cada cargo faz: <b>Executa</b>, <b>Apoia</b>, <b>Verificar</b> (precisa confirmar) ou <b>—</b> (não faz).</li>
+          <li>Na <b>Matriz</b>, {editavel ? 'clique numa célula para trocar' : 'veja'} o que cada cargo faz: <b>Principal</b> (compatível com o cargo), <b>Condicionada</b> (depende de protocolo, capacitação ou atribuição), <b>A verificar</b> (precisa confirmar) ou <b>—</b> (não alocar).</li>
         </ol>
       </Dica>
       <Erro mensagem={erro || erroQ} />
@@ -146,7 +146,7 @@ export function AbaEquipe({ unidade: u, editavel }: { unidade: Unidade; editavel
             <thead>
               <tr>
                 <th>Cargo</th>
-                {colunas.map(a => <th key={a.id}>{a.nome}</th>)}
+                {colunas.map(a => <th key={a.id} title={a.observacao ?? undefined}>{a.nome}</th>)}
               </tr>
             </thead>
             <tbody>

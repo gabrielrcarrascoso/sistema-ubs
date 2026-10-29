@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart3, ChevronRight, CircleCheck, ClipboardList, FileText, Flag, Hospital, Hourglass, PenLine, UserCheck, Users, type LucideIcon } from 'lucide-react';
+import { Activity, BarChart3, ChevronRight, CircleCheck, ClipboardList, FileText, Flag, Hospital, Hourglass, PenLine, UserCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
@@ -9,6 +9,7 @@ import { mesAno, NOME_PAPEL, numeroBR, ultimosMeses } from '../lib/util';
 import { Cabecalho, Carregando, Erro } from '../components/ui';
 import { BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Linhas, Numero, SeloSituacao, SERIES } from '../components/graficos';
 import { GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../lib/paineis';
+import { buscarProducao, resumirProducao, TIPOS } from '../lib/producao';
 import { buscarCamposFicha } from './config/CamposFicha';
 import { preenchimentoFicha } from './ubs/AbaFicha';
 
@@ -37,7 +38,7 @@ export function Inicio() {
   const mesPassado = ultimosMeses(2)[0];
 
   const { dados, carregando, erro } = useConsulta(async () => {
-    const [unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes] = await Promise.all([
+    const [unidades, campos, todasPendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao] = await Promise.all([
       buscarUnidades(),
       buscarCamposFicha(true),
       supabase.from('pendencias').select('*').eq('concluida', false).then(ok<Pendencia[]>),
@@ -47,13 +48,20 @@ export function Inicio() {
       buscarLancamentos({ desde: ultimosMeses(12)[0] }),
       ehGestor ? supabase.from('perfis').select('id', { count: 'exact', head: true }).eq('ativo', false) : Promise.resolve({ count: 0 }),
       supabase.from('equipes').select('unidade_id, cargo, quantidade').then(ok<Pick<Equipe, 'unidade_id' | 'cargo' | 'quantidade'>[]>),
+      buscarProducao(),
     ]);
-    return { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando: aguardando.count ?? 0, equipes };
+    // só o que é das UBS ativas (as arquivadas não entram nos números)
+    const ativa = (id: string | null) => !id || unidades.some(u => u.id === id);
+    const pendencias = todasPendencias.filter(p => ativa(p.unidade_id));
+    return {
+      unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando: aguardando.count ?? 0, equipes,
+      producao: producao.filter(p => ativa(p.unidade_id)),
+    };
   }, [ehGestor, mesPassado], 'inicio');
 
   if (carregando) return <Carregando />;
   if (!dados || !perfil) return <Erro mensagem={erro} />;
-  const { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes } = dados;
+  const { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao } = dados;
 
   const minhaUBS = perfil.papel === 'coordenador' ? unidades.find(u => u.id === perfil.unidade_id) : undefined;
   const lancadosNoMes = (uid: string) => lancamentos12.filter(l => l.unidade_id === uid && l.competencia.startsWith(mesPassado.slice(0, 7))).length;
@@ -116,10 +124,13 @@ export function Inicio() {
     rotulo: u.nome,
     valores: prioridades.map(pr => pendencias.filter(p => p.unidade_id === u.id && p.prioridade === pr).length),
   }));
-  const producao = indicadores.find(i => i.codigo === 'PROD-01');
-  const seriesProd = producao
-    ? unidades.slice(0, 5).map((u, i) => ({ nome: u.nome, cor: SERIES[i], ...serieMensal(lancamentos12.filter(l => l.unidade_id === u.id), producao.id) }))
+  const indicadorProd = indicadores.find(i => i.codigo === 'PROD-01');
+  const seriesProd = indicadorProd
+    ? unidades.slice(0, 5).map((u, i) => ({ nome: u.nome, cor: SERIES[i], ...serieMensal(lancamentos12.filter(l => l.unidade_id === u.id), indicadorProd.id) }))
     : [];
+  const nomeUBS = (id: string) => unidades.find(u => u.id === id)?.nome ?? '';
+  const prod = resumirProducao(producao, p => `${nomeUBS(p.unidade_id)} · ${p.equipe}`);
+  const registrosDaUBS = (id: string) => producao.filter(p => p.unidade_id === id && p.dimensao === 'categoria' && p.inicio === prod?.inicio).reduce((s, p) => s + p.quantidade, 0);
   const temProducao = seriesProd.some(s => s.pontos.some(p => p !== null));
   const valorNoUltimo = (uid: string, iid: string) =>
     lancamentos12.find(l => l.unidade_id === uid && l.indicador_id === iid && ultimo && l.competencia.startsWith(ultimo.slice(0, 7)));
@@ -137,7 +148,16 @@ export function Inicio() {
       />
 
       <div className="numeros">
-        <Numero destaque icone={<Users size={15} strokeWidth={2} />} rotulo="Profissionais nas UBS" valor={totalProf} detalhe={`em ${unidades.length} unidade(s) acompanhada(s)`} />
+        {prod && (
+          <Numero
+            destaque
+            icone={<Activity size={15} strokeWidth={2} />}
+            rotulo={`Registros no e-SUS · ${prod.periodo}`}
+            valor={numeroBR(prod.total, 0)}
+            detalhe={`≈${numeroBR(prod.mediaMensal, 0)} por mês em ${prod.porCategoria.length} equipes de ${unidades.length} UBS`}
+          />
+        )}
+        <Numero destaque={!prod} icone={<Users size={15} strokeWidth={2} />} rotulo="Profissionais nas UBS" valor={totalProf} detalhe={`em ${unidades.length} unidade(s) acompanhada(s)`} />
         <Numero icone={<FileText size={15} strokeWidth={2} />} rotulo="Fichas preenchidas" valor={`${numeroBR(fichaMedia, 0)}%`} detalhe={<span className="mini-trilho"><span style={{ width: `${fichaMedia}%` }} /></span>} />
         <Numero icone={<Flag size={15} strokeWidth={2} />} rotulo="Pendências abertas" valor={pendencias.length} detalhe={altasAbertas ? `${altasAbertas} de prioridade alta` : 'nenhuma urgente'} />
         <Numero icone={<BarChart3 size={15} strokeWidth={2} />} rotulo={`Indicadores de ${mesAno(mesPassado)}`} valor={`${lancados}/${esperados}`} detalhe="números lançados" />
@@ -170,6 +190,31 @@ export function Inicio() {
             </div>
           )}
         </section>
+
+        {prod && (
+          <>
+            <CartaoGrafico
+              titulo="Registros por equipe"
+              subtitulo={`Total de ${prod.periodo}, por categoria profissional · e-SUS`}
+              tabela={{
+                cabecalho: ['Equipe', ...prod.categorias.map(c => c.nome), 'Total', 'Média mensal'],
+                linhas: prod.porCategoria.map(l => {
+                  const t = l.valores.reduce((a, b) => a + b, 0);
+                  return [l.rotulo, ...l.valores, t, Math.round(t / prod.meses)];
+                }),
+              }}
+            >
+              <BarrasEmpilhadasH series={prod.categorias.map(c => ({ nome: c.plural, cor: c.cor }))} linhas={prod.porCategoria} />
+            </CartaoGrafico>
+            <CartaoGrafico
+              titulo="Tipo de atendimento"
+              subtitulo="Proporção de cada tipo em cada equipe"
+              tabela={{ cabecalho: ['Equipe', ...TIPOS.map(t => t.curto)], linhas: prod.porTipo.map(l => [l.rotulo, ...l.valores]) }}
+            >
+              <BarrasEmpilhadasH series={TIPOS.map(t => ({ nome: t.curto, cor: t.cor }))} linhas={prod.porTipo} percentual />
+            </CartaoGrafico>
+          </>
+        )}
 
         <CartaoGrafico
           titulo="Equipe por UBS"
@@ -234,18 +279,20 @@ export function Inicio() {
           )}
         </CartaoGrafico>
 
-        <CartaoGrafico
-          titulo="Atendimentos por mês"
-          subtitulo="Últimos 12 meses, por UBS"
-          className="largo"
-          tabela={temProducao ? { cabecalho: ['Mês', ...seriesProd.map(s => s.nome)], linhas: (seriesProd[0]?.rotulos ?? []).map((r, k) => [r, ...seriesProd.map(s => s.pontos[k] ?? '—')]) } : undefined}
-        >
-          {temProducao ? (
-            <Linhas rotulosX={seriesProd[0].rotulos} series={seriesProd.map(s => ({ nome: s.nome, cor: s.cor, pontos: s.pontos }))} />
-          ) : (
-            <GraficoVazio>O gráfico aparece quando houver atendimentos lançados.</GraficoVazio>
-          )}
-        </CartaoGrafico>
+        {(temProducao || !prod) && (
+          <CartaoGrafico
+            titulo="Atendimentos por mês"
+            subtitulo="Últimos 12 meses, por UBS"
+            className="largo"
+            tabela={temProducao ? { cabecalho: ['Mês', ...seriesProd.map(s => s.nome)], linhas: (seriesProd[0]?.rotulos ?? []).map((r, k) => [r, ...seriesProd.map(s => s.pontos[k] ?? '—')]) } : undefined}
+          >
+            {temProducao ? (
+              <Linhas rotulosX={seriesProd[0].rotulos} series={seriesProd.map(s => ({ nome: s.nome, cor: s.cor, pontos: s.pontos }))} />
+            ) : (
+              <GraficoVazio>O gráfico aparece quando houver atendimentos lançados.</GraficoVazio>
+            )}
+          </CartaoGrafico>
+        )}
       </div>
 
       <h2 className="titulo-secao">Painel de cada UBS</h2>
@@ -264,6 +311,7 @@ export function Inicio() {
                 {u.id === perfil.unidade_id && <span className="chip">Minha UBS</span>}
               </span>
               <span className="cartao-ubs-numeros">
+                {prod && <span><strong>{numeroBR(registrosDaUBS(u.id), 0)}</strong> registros</span>}
                 <span><strong>{u.profissionais_declarados ?? '—'}</strong> profissionais</span>
                 <span><strong>{pend.length}</strong> pendências</span>
                 <span><strong>{numeroBR(pct, 0)}%</strong> da ficha</span>

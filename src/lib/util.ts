@@ -6,7 +6,8 @@ export const NOME_PAPEL = {
   profissional: 'Profissional',
 } as const;
 
-export const NOME_NIVEL = { executa: 'Executa', apoia: 'Apoia', verificar: 'Verificar', nao: '—' } as const;
+// Matriz de competências: Principal = compatível com o cargo; Condicionada = depende de protocolo, capacitação ou atribuição
+export const NOME_NIVEL = { executa: 'Principal', apoia: 'Condicionada', verificar: 'A verificar', nao: '—' } as const;
 export const CLASSE_NIVEL = {
   executa: 'status exec',
   apoia: 'status support',

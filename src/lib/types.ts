@@ -43,6 +43,7 @@ export interface Atividade {
   id: string;
   nome: string;
   ordem: number;
+  observacao: string | null;
 }
 
 export interface Equipe {
