@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useConfirmar } from '../../components/Confirmacao';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok } from '../../lib/hooks';
-import { calcularValor } from '../../lib/indicadores';
+import { calcularValor, excedeDenominador } from '../../lib/indicadores';
 import type { Indicador, Lancamento, Unidade } from '../../lib/types';
 import { atingiuMeta, lerNumeroBR, mesAno, valorIndicador } from '../../lib/util';
 import { Campo, Erro, Modal } from '../../components/ui';
@@ -32,6 +32,7 @@ export function LancarMes({
   const [unidadeId, setUnidadeId] = useState(unidadeInicial);
   const [mes, setMes] = useState(mesInicial);
   const [fonte, setFonte] = useState('');
+  const [dataExtracao, setDataExtracao] = useState(() => new Date().toLocaleDateString('sv-SE')); // hoje, AAAA-MM-DD
   const [linhas, setLinhas] = useState<Record<string, Linha>>({});
   const [existentes, setExistentes] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(true);
@@ -84,7 +85,9 @@ export function LancarMes({
       const den = lerNumeroBR(linhas[i.id].denominador ?? '');
       if (num === null || num < 0) problemas.push(`${i.codigo}: número inválido`);
       if (i.tipo !== 'contagem' && !den) problemas.push(`${i.codigo}: informe o total (denominador)`);
-      if (i.tipo === 'percentual' && num !== null && den && num > den) acima100.push(i.codigo);
+      const excede = excedeDenominador(i, num, den);
+      if (excede) problemas.push(excede);
+      else if (i.tipo === 'percentual' && num !== null && den && num > den) acima100.push(i.codigo);
       return {
         indicador_id: i.id,
         unidade_id: unidadeId,
@@ -92,6 +95,7 @@ export function LancarMes({
         numerador: num ?? 0,
         denominador: i.tipo === 'contagem' ? null : den,
         fonte: fonte.trim() || i.fonte_dados,
+        data_extracao: dataExtracao || null,
       };
     });
     if (problemas.length) return setErro(problemas.join(' · '));
@@ -179,9 +183,14 @@ export function LancarMes({
           </table>
         </div>
 
-        <Campo rotulo="Fonte dos dados (opcional)" dica="Se ficar em branco, usa a fonte padrão de cada indicador (ex.: e-SUS APS / PEC)." className="full">
-          <input value={fonte} onChange={e => setFonte(e.target.value)} placeholder="Ex.: Relatório de produção do PEC, emitido em 05/10" />
-        </Campo>
+        <div className="form-grid cols-2">
+          <Campo rotulo="Fonte dos dados (opcional)" dica="Se ficar em branco, usa a fonte padrão de cada indicador (ex.: e-SUS APS / PEC).">
+            <input value={fonte} onChange={e => setFonte(e.target.value)} placeholder="Ex.: Relatório de produção do PEC, emitido em 05/10" />
+          </Campo>
+          <Campo rotulo="Data de extração" dica="Quando os números foram tirados do sistema. Ficam como “a validar” até alguém conferir.">
+            <input type="date" value={dataExtracao} onChange={e => setDataExtracao(e.target.value)} />
+          </Campo>
+        </div>
 
         <div style={{ marginTop: 12 }}><Erro mensagem={erro} /></div>
         <div className="actions">

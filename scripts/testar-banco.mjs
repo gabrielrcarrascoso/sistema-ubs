@@ -93,5 +93,19 @@ await t('gestor ve os nomes', await como(U1, `select bool_and(nome_visivel) as v
 await t('adm da UBS nao altera nomes', await como(U2, `update public.producao_profissionais set nome='x' returning id`), []);
 await t('anon nao le profissionais', await (async()=>{ await db.exec(`set role anon`); try { return (await db.query('select count(*) from public.v_producao_profissionais')).rows } catch(e){ return 'EXCECAO: '+e.message } finally { await db.exec('reset role') } })(), /permission denied/);
 
+// ---------- Indicadores da planilha (I1–I6, C1, C2) ----------
+const IND = c => `(select id from public.indicadores where codigo='${c}')`;
+const lanca = (c, num, den) => `insert into public.lancamentos (indicador_id, unidade_id, competencia, numerador, denominador, fonte) values (${IND(c)}, ${PRADO}, '2026-09-01', ${num}, ${den}, 'teste') returning id`;
+await t('8 indicadores ativos', await como(U1, `select string_agg(codigo, ',' order by codigo) as c from public.indicadores where ativo`), [{c:'C1,C2,I1,I2,I3,I4,I5,I6'}]);
+await t('metas da planilha', await como(U1, `select string_agg(codigo || '=' || coalesce(meta::text, '-'), ',' order by codigo) as m from public.indicadores where ativo`), [{m:'C1=-,C2=-,I1=70,I2=80,I3=50,I4=45,I5=200,I6=90'}]);
+await como(null, lanca('I3', 30, 120)); await como(null, lanca('C1', 110, 100)); await como(null, lanca('I2', 150, 100)); await como(null, lanca('I5', 210, 'null'));
+await t('I3 = (1 - 30/120) x 100 = 75', await como(U1, `select valor from public.v_lancamentos where codigo='I3'`), [{valor:'75.00'}]);
+await t('C1 = (110 - 100) / 100 x 100 = 10', await como(U1, `select valor from public.v_lancamentos where codigo='C1'`), [{valor:'10.00'}]);
+await t('I2 pode passar de 100%', await como(U1, `select valor from public.v_lancamentos where codigo='I2'`), [{valor:'150.00'}]);
+await t('I5 contagem', await como(U1, `select valor from public.v_lancamentos where codigo='I5'`), [{valor:'210'}]);
+await t('I4 nao aceita numerador > denominador', await como(null, lanca('I4', 50, 40)), /não pode ser maior/);
+await t('C2 nao aceita denominador zero', await como(null, lanca('C2', 50, 0)), /denominador maior que zero/);
+await t('lancamento comeca nao validado', await como(U1, `select bool_and(not validado) as v from public.lancamentos`), [{v:true}]);
+
 console.log(falhas ?`\n${falhas} teste(s) falharam.` : '\nTodos os testes passaram.');
 process.exit(falhas ? 1 : 0);

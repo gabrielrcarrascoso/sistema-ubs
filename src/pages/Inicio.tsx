@@ -8,7 +8,7 @@ import type { Aplicacao, Equipe, Pendencia, Questionario } from '../lib/types';
 import { mesAno, NOME_PAPEL, numeroBR, ultimosMeses } from '../lib/util';
 import { Cabecalho, Carregando, Erro } from '../components/ui';
 import { BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Linhas, Numero, SeloSituacao, SERIES } from '../components/graficos';
-import { GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../lib/paineis';
+import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../lib/paineis';
 import { buscarProducao, resumirProducao, TIPOS } from '../lib/producao';
 import { buscarCamposFicha } from './config/CamposFicha';
 import { preenchimentoFicha } from './ubs/AbaFicha';
@@ -64,6 +64,7 @@ export function Inicio() {
   const { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao } = dados;
 
   const minhaUBS = perfil.papel === 'coordenador' ? unidades.find(u => u.id === perfil.unidade_id) : undefined;
+  const mensais = indicadores.filter(i => i.periodicidade === 'Mensal'); // os cobrados todo mês
   const lancadosNoMes = (uid: string) => lancamentos12.filter(l => l.unidade_id === uid && l.competencia.startsWith(mesPassado.slice(0, 7))).length;
   const abertos = questionarios.filter(q => q.status === 'aberto');
   const tarefas: Tarefa[] = [];
@@ -78,8 +79,8 @@ export function Inicio() {
       if (faltam.length)
         tarefas.push({ icone: Hourglass, titulo: `“${q.titulo}”: ${faltam.length} UBS ainda não responderam`, detalhe: faltam.map(u => u.nome).join(', '), link: `/questionarios/${q.id}/resultados` });
     }
-    const semLancamento = unidades.filter(u => lancadosNoMes(u.id) < indicadores.length);
-    if (indicadores.length && semLancamento.length)
+    const semLancamento = unidades.filter(u => lancadosNoMes(u.id) < mensais.length);
+    if (mensais.length && semLancamento.length)
       tarefas.push({ icone: BarChart3, titulo: `Indicadores de ${mesAno(mesPassado)} incompletos em ${semLancamento.length} UBS`, detalhe: semLancamento.map(u => u.nome).join(', '), link: '/indicadores?aba=qualidade' });
     const incompletas = unidades.filter(u => preenchimentoFicha(u, campos) < 100);
     if (incompletas.length)
@@ -92,7 +93,7 @@ export function Inicio() {
   if (minhaUBS) {
     for (const q of abertos.filter(q => !aplicacoes.some(a => a.questionario_id === q.id && a.unidade_id === minhaUBS.id)))
       tarefas.push({ icone: ClipboardList, titulo: `Responder o questionário “${q.titulo}”`, detalhe: 'Sua UBS ainda não respondeu.', link: `/questionarios/${q.id}/responder`, alta: true });
-    const faltam = indicadores.length - lancadosNoMes(minhaUBS.id);
+    const faltam = mensais.length - lancadosNoMes(minhaUBS.id);
     if (faltam > 0)
       tarefas.push({ icone: BarChart3, titulo: `Lançar ${faltam} indicador(es) de ${mesAno(mesPassado)}`, detalhe: 'Números do mês passado tirados do e-SUS/PEC.', link: '/indicadores?aba=lancar', alta: true });
     const pct = preenchimentoFicha(minhaUBS, campos);
@@ -110,8 +111,8 @@ export function Inicio() {
   const totalProf = unidades.reduce((s, u) => s + (u.profissionais_declarados ?? 0), 0);
   const fichaMedia = unidades.length ? unidades.reduce((s, u) => s + preenchimentoFicha(u, campos), 0) / unidades.length : 0;
   const altasAbertas = pendencias.filter(p => p.prioridade === 'Alta').length;
-  const esperados = indicadores.length * unidades.length;
-  const lancados = unidades.reduce((s, u) => s + Math.min(lancadosNoMes(u.id), indicadores.length), 0);
+  const esperados = mensais.length * unidades.length;
+  const lancados = unidades.reduce((s, u) => s + Math.min(lancadosNoMes(u.id), mensais.length), 0);
 
   const equipePorUBS = unidades.map(u => {
     const valores = GRUPOS_CARGO.map(() => 0);
@@ -124,9 +125,9 @@ export function Inicio() {
     rotulo: u.nome,
     valores: prioridades.map(pr => pendencias.filter(p => p.unidade_id === u.id && p.prioridade === pr).length),
   }));
-  const indicadorProd = indicadores.find(i => i.codigo === 'PROD-01');
+  const indicadorProd = indicadores.find(i => i.codigo === CODIGO_ATENDIMENTOS);
   const seriesProd = indicadorProd
-    ? unidades.slice(0, 5).map((u, i) => ({ nome: u.nome, cor: SERIES[i], ...serieMensal(lancamentos12.filter(l => l.unidade_id === u.id), indicadorProd.id) }))
+    ? unidades.slice(0, 5).map((u, i) => ({ nome: u.nome, cor: SERIES[i], ...serieMensal(lancamentos12.filter(l => l.unidade_id === u.id), indicadorProd.id, 12, 'numerador') }))
     : [];
   const nomeUBS = (id: string) => unidades.find(u => u.id === id)?.nome ?? '';
   const prod = resumirProducao(producao, p => `${nomeUBS(p.unidade_id)} · ${p.equipe}`);

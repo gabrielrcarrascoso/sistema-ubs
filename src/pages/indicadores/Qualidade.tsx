@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { buscarUnidades, ok, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
-import type { Coleta, Equipe } from '../../lib/types';
+import type { Coleta, Equipe, Lancamento } from '../../lib/types';
 import { mesAno, numeroBR, ultimosMeses, valorIndicador } from '../../lib/util';
 import { Dica, Carregando, Cartao, Erro, Painel } from '../../components/ui';
 
@@ -31,7 +31,10 @@ export function Qualidade() {
 
   if (carregando) return <Carregando />;
   if (erro || !dados) return <Erro mensagem={erro} />;
-  const { indicadores, unidades, lancamentos, equipes, coletas } = dados;
+  const { indicadores: todos, unidades, lancamentos, equipes, coletas } = dados;
+  // só os indicadores mensais são cobrados todo mês (o I6, por exemplo, é "por avaliação")
+  const indicadores = todos.filter(i => i.periodicidade === 'Mensal');
+  const indicadorDe = (l: Lancamento) => todos.find(i => i.id === l.indicador_id);
 
   // Meses fechados = até o mês passado (o mês atual ainda está acontecendo)
   const meses = ultimosMeses(qtdMeses + 1).slice(0, -1);
@@ -55,9 +58,16 @@ export function Qualidade() {
   const ubsEmDia = unidades.filter(u => indicadores.every(i => !faltas.get(`${u.id}|${i.id}`)?.length)).length;
 
   for (const l of lancamentos) {
-    // 2. Percentual acima de 100%
-    if (l.tipo_aplicado === 'percentual' && l.valor !== null && l.valor > 100)
-      achados.push({ gravidade: 'Alta', categoria: 'Inconsistência', descricao: `${l.indicador_nome} em ${mesAno(l.competencia)} = ${valorIndicador(l.valor, '%')} (quantidade maior que o total)`, onde: l.unidade_nome });
+    // 2. Percentual acima de 100% (em alguns indicadores, como o I2, isso é possível: só pede conferência)
+    if (l.tipo_aplicado === 'percentual' && l.valor !== null && l.valor > 100) {
+      const possivel = !indicadorDe(l)?.numerador_ate_denominador;
+      achados.push({
+        gravidade: possivel ? 'Baixa' : 'Alta',
+        categoria: possivel ? 'Conferir' : 'Inconsistência',
+        descricao: `${l.indicador_nome} em ${mesAno(l.competencia)} = ${valorIndicador(l.valor, '%')} (quantidade maior que o total${possivel ? '; possível neste indicador, mas confira' : ''})`,
+        onde: l.unidade_nome,
+      });
+    }
     // 3. Fórmula desatualizada
     if (l.versao_formula < l.versao_atual)
       achados.push({ gravidade: 'Baixa', categoria: 'Versão da fórmula', descricao: `${l.indicador_nome} em ${mesAno(l.competencia)} foi calculado com uma fórmula antiga (v${l.versao_formula}; atual v${l.versao_atual})`, onde: l.unidade_nome });
@@ -68,6 +78,12 @@ export function Qualidade() {
     const d = new Date(l.competencia.slice(0, 10) + 'T12:00:00');
     d.setMonth(d.getMonth() - 1);
     const mesAnt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    // o C1 já é uma variação: confere o próprio valor
+    if (l.tipo_aplicado === 'variacao') {
+      if (l.valor !== null && Math.abs(l.valor) > 50)
+        achados.push({ gravidade: 'Média', categoria: 'Variação atípica', descricao: `Atendimentos variaram ${valorIndicador(l.valor, '%')} em ${mesAno(l.competencia)} (C1) — confirmar se os meses são comparáveis`, onde: l.unidade_nome });
+      continue;
+    }
     const ant = lancamentos.find(x => x.indicador_id === l.indicador_id && x.unidade_id === l.unidade_id && x.competencia.startsWith(mesAnt));
     if (ant?.valor && l.valor !== null) {
       const variacao = ((l.valor - ant.valor) / ant.valor) * 100;
@@ -86,7 +102,12 @@ export function Qualidade() {
     if (!semQtd.length && u.profissionais_declarados !== null && soma !== u.profissionais_declarados)
       achados.push({ gravidade: 'Média', categoria: 'Divergência de equipe', descricao: `${u.profissionais_declarados} declarados × ${soma} discriminados por cargo`, onde: u.nome });
 
-    // 6. Coleta de campo desatualizada (> 90 dias)
+    // 6. Números ainda não validados
+    const aValidar = lancamentos.filter(l => l.unidade_id === u.id && !l.validado).length;
+    if (aValidar)
+      achados.push({ gravidade: 'Baixa', categoria: 'Validação', descricao: `${aValidar} número(s) lançado(s) ainda não validado(s)`, onde: u.nome });
+
+    // 7. Coleta de campo desatualizada (> 90 dias)
     const ultima = coletas.filter(c => c.unidade_id === u.id).map(c => c.data_visita ?? c.created_at.slice(0, 10)).sort().at(-1);
     const dias = ultima ? (Date.now() - new Date(ultima).getTime()) / 86_400_000 : Infinity;
     if (dias > 90)

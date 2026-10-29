@@ -5,9 +5,9 @@ import { CalendarPlus, Download, Pencil, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
-import { buscarIndicadores, buscarLancamentos, calcularValor } from '../../lib/indicadores';
+import { buscarIndicadores, buscarLancamentos, calcularValor, excedeDenominador } from '../../lib/indicadores';
 import type { Indicador, Lancamento, Unidade } from '../../lib/types';
-import { baixarCSV, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../../lib/util';
+import { baixarCSV, dataBR, dataHoraBR, mesAno, numOuNull, ultimosMeses, valorIndicador } from '../../lib/util';
 import { BotaoIcone, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
 import { LancarMes } from './LancarMes';
 
@@ -20,6 +20,8 @@ interface Formulario {
   denominador: number | null;
   fonte: string;
   observacao: string;
+  data_extracao: string; // 'AAAA-MM-DD' ou vazio
+  validado: boolean;
 }
 
 const mesAnterior = () => ultimosMeses(2)[0].slice(0, 7);
@@ -64,6 +66,8 @@ export function Lancamentos() {
       denominador: l.denominador === null ? null : Number(l.denominador),
       fonte: l.fonte,
       observacao: l.observacao ?? '',
+      data_extracao: l.data_extracao ?? '',
+      validado: l.validado,
     });
   }
 
@@ -73,6 +77,8 @@ export function Lancamentos() {
     setErro(null);
     if (form.numerador === null) return setErro('Informe o numerador.');
     if (indicadorDoForm.tipo !== 'contagem' && !form.denominador) return setErro('Informe um denominador maior que zero.');
+    const excede = excedeDenominador(indicadorDoForm, form.numerador, form.denominador);
+    if (excede) return setErro(excede);
     if (indicadorDoForm.tipo === 'percentual' && form.numerador > (form.denominador ?? 0))
       if (!(await confirmar('A quantidade é maior que o total (resultado acima de 100%). Salvar mesmo assim?', { botao: 'Salvar assim mesmo' }))) return;
     const registro = {
@@ -83,6 +89,8 @@ export function Lancamentos() {
       denominador: indicadorDoForm.tipo === 'contagem' ? null : form.denominador,
       fonte: form.fonte.trim(),
       observacao: form.observacao.trim() || null,
+      data_extracao: form.data_extracao || null,
+      validado: form.validado,
     };
     const { error } = form.id
       ? await supabase.from('lancamentos').update(registro).eq('id', form.id)
@@ -182,7 +190,9 @@ export function Lancamentos() {
                         <span className="chip warn" style={{ marginLeft: 6 }} title="Calculado com uma versão anterior da fórmula">fórmula antiga</span>
                       )}
                     </td>
-                    <td className="muted celula-fonte" title={l.fonte}>{l.fonte}</td>
+                    <td className="muted celula-fonte" title={`${l.fonte}${l.data_extracao ? ` · extraído em ${dataBR(l.data_extracao)}` : ''}`}>
+                      {l.validado ? <span className="chip">validado</span> : <span className="chip neutral">a validar</span>} {l.fonte}
+                    </td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {podeEditar(l.unidade_id) && (
                         <>
@@ -237,6 +247,15 @@ export function Lancamentos() {
               )}
               <Campo rotulo="Fonte do dado" className="full" dica="Sistema/relatório de onde o número foi tirado (rastreabilidade).">
                 <input required value={form.fonte} onChange={e => setForm({ ...form, fonte: e.target.value })} />
+              </Campo>
+              <Campo rotulo="Data de extração" dica="Quando o número foi tirado do sistema de origem.">
+                <input type="date" value={form.data_extracao} onChange={e => setForm({ ...form, data_extracao: e.target.value })} />
+              </Campo>
+              <Campo rotulo="Validação">
+                <select value={form.validado ? 'sim' : 'nao'} onChange={e => setForm({ ...form, validado: e.target.value === 'sim' })}>
+                  <option value="nao">Pendente de validação</option>
+                  <option value="sim">Validado</option>
+                </select>
               </Campo>
               <Campo rotulo="Observação" className="full">
                 <textarea value={form.observacao} onChange={e => setForm({ ...form, observacao: e.target.value })} />
@@ -353,7 +372,8 @@ function ImportarPlanilha({
     baixarCSV(
       [
         ['codigo', 'unidade', 'competencia', 'numerador', 'denominador', 'fonte', 'observacao'],
-        [indicadores[0]?.codigo ?? 'PROD-01', unidades[0]?.nome ?? 'Nome da UBS', mesAnterior(), '1240', '', 'e-SUS APS / PEC', ''],
+        // exemplo: C1 = atendimentos do mês (numerador) e do mês anterior (denominador)
+        ['C1', unidades[0]?.nome ?? 'Nome da UBS', mesAnterior(), '1240', '1180', 'e-SUS APS / PEC', ''],
       ],
       'modelo_importacao_indicadores.csv',
     );
@@ -386,6 +406,8 @@ function ImportarPlanilha({
         if (numerador === null || numerador < 0) return { ...base, erro: 'Numerador ausente ou inválido' };
         const denominador = lerNumero(pegar('denominador'));
         if (ind.tipo !== 'contagem' && !denominador) return { ...base, erro: 'Denominador obrigatório e maior que zero' };
+        const excede = excedeDenominador(ind, numerador, denominador);
+        if (excede) return { ...base, erro: excede };
         const fonte = pegar('fonte') || ind.fonte_dados;
         const chave = `${ind.id}|${uni.id}|${competencia}`;
         if (vistos.has(chave)) return { ...base, erro: 'Linha duplicada no arquivo (mesmo indicador, unidade e mês)' };

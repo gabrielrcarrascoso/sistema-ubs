@@ -336,7 +336,7 @@ export function BarraMeta({
   unidade: string;
 }) {
   const pct = unidade === '%';
-  const max = pct ? 100 : Math.max(valor ?? 0, meta ?? 0, 1) * 1.15;
+  const max = pct ? Math.max(100, valor ?? 0, meta ?? 0) : Math.max(valor ?? 0, meta ?? 0, 1) * 1.15; // I2 pode passar de 100%
   const situacao: Situacao =
     valor === null ? 'sem_dado' : meta === null ? 'sem_meta' : (sentido === 'maior' ? valor >= meta : valor <= meta) ? 'atingiu' : 'abaixo';
   const corBarra = situacao === 'atingiu' ? CORES.serie1 : situacao === 'abaixo' ? CORES.serie2 : CORES.neutro;
@@ -347,7 +347,7 @@ export function BarraMeta({
         <span className="barra-meta-valor">{valor === null ? '—' : `${fmt(valor)}${pct ? '%' : ''}`}</span>
       </div>
       <div className="barra-trilho">
-        {valor !== null && <span className="barra-preenchida" style={{ width: `${Math.min(100, (valor / max) * 100)}%`, background: corBarra }} />}
+        {valor !== null && <span className="barra-preenchida" style={{ width: `${Math.max(0, Math.min(100, (valor / max) * 100))}%`, background: corBarra }} />}
         {meta !== null && <span className="barra-referencia" style={{ left: `${(meta / max) * 100}%` }} title={`Meta: ${fmt(meta)}${pct ? '%' : ''}`} />}
       </div>
       <div className="barra-meta-rodape">

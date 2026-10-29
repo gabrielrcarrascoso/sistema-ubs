@@ -16,14 +16,25 @@ export function grupoDoCargo(cargo: string): number {
   return GRUPOS_CARGO.findIndex(g => g.teste.test(cargo));
 }
 
-/** Série mensal (últimos N meses) de um indicador, juntando as UBS do filtro */
-export function serieMensal(lancs: Lancamento[], indicadorId: string, meses = 12) {
+/**
+ * Série mensal (últimos N meses) de um indicador, juntando as UBS do filtro.
+ * campo 'numerador' usa só a variável A (ex.: no C1, os atendimentos do mês).
+ */
+export function serieMensal(lancs: Lancamento[], indicadorId: string, meses = 12, campo: 'valor' | 'numerador' = 'valor') {
   const lista = ultimosMeses(meses);
+  const doMes = (m: string) => lancs.filter(l => l.indicador_id === indicadorId && l.competencia.startsWith(m.slice(0, 7)));
   return {
     rotulos: lista.map(m => mesAno(m).replace('/20', '/')),
-    pontos: lista.map(m => agregar(lancs.filter(l => l.indicador_id === indicadorId && l.competencia.startsWith(m.slice(0, 7))))),
+    pontos: lista.map(m => {
+      const ls = doMes(m);
+      if (campo === 'valor') return agregar(ls);
+      return ls.length ? ls.reduce((s, l) => s + Number(l.numerador), 0) : null;
+    }),
   };
 }
+
+/** Indicador cujo numerador são os atendimentos do mês (C1 — variação mensal) */
+export const CODIGO_ATENDIMENTOS = 'C1';
 
 /** Último mês que tem algum lançamento (ou null) */
 export function ultimoMesComDado(lancs: Lancamento[]): string | null {

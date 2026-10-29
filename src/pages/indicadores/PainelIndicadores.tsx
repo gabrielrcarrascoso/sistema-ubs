@@ -5,7 +5,8 @@ import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../../lib/indicadores';
 import type { Lancamento } from '../../lib/types';
-import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../../lib/util';
+import { atingiuMeta, mesAno, numeroBR, ultimosMeses, valorIndicador } from '../../lib/util';
+import { CODIGO_ATENDIMENTOS } from '../../lib/paineis';
 import { GraficoBarras } from '../../components/GraficoBarras';
 import { Dica, Carregando, Cartao, Erro, EstadoVazio, Painel } from '../../components/ui';
 
@@ -38,9 +39,14 @@ export function PainelIndicadores() {
   // Último mês que tem algum dado
   const ultimoMesComDado = filtrados.length ? filtrados.map(l => l.competencia.slice(0, 10)).sort().at(-1)! : null;
 
-  const producao = indicadores.find(i => i.codigo === 'PROD-01');
-  const qualidade = indicadores.find(i => i.codigo === 'QUAL-01');
-  const indSelecionado = indicadores.find(i => i.id === indicadorId) ?? producao ?? indicadores[0];
+  // C1 traz os atendimentos do mês (numerador) e a variação em relação ao mês anterior; I1 é a produtividade
+  const atendimentos = indicadores.find(i => i.codigo === CODIGO_ATENDIMENTOS);
+  const produtividade = indicadores.find(i => i.codigo === 'I1');
+  const atendimentosNoMes = (mes: string) => {
+    const ls = filtrados.filter(l => l.indicador_id === atendimentos?.id && l.competencia.startsWith(mes.slice(0, 7)));
+    return ls.length ? ls.reduce((s, l) => s + Number(l.numerador), 0) : null;
+  };
+  const indSelecionado = indicadores.find(i => i.id === indicadorId) ?? produtividade ?? indicadores[0];
 
   const resumo = indicadores.map(i => {
     const valor = ultimoMesComDado ? valorNoMes(i.id, ultimoMesComDado) : null;
@@ -98,14 +104,18 @@ export function PainelIndicadores() {
 
       <div className="cards">
         <Cartao
-          titulo={producao?.nome ?? 'Atendimentos no mês'}
-          valor={producao && ultimoMesComDado ? valorIndicador(valorNoMes(producao.id, ultimoMesComDado), '') : '—'}
-          nota={ultimoMesComDado ? mesAno(ultimoMesComDado) : 'sem dados'}
+          titulo="Atendimentos no mês"
+          valor={ultimoMesComDado && atendimentosNoMes(ultimoMesComDado) !== null ? numeroBR(atendimentosNoMes(ultimoMesComDado)!, 0) : '—'}
+          nota={
+            atendimentos && ultimoMesComDado && atendimentosNoMes(ultimoMesComDado) !== null
+              ? `${mesAno(ultimoMesComDado)} · variação ${valorIndicador(valorNoMes(atendimentos.id, ultimoMesComDado), '%')} (C1)`
+              : 'lançados no C1'
+          }
         />
         <Cartao
-          titulo={qualidade?.nome ?? 'Registros completos'}
-          valor={qualidade && ultimoMesComDado ? valorIndicador(valorNoMes(qualidade.id, ultimoMesComDado), '%') : '—'}
-          nota={qualidade?.meta ? `Meta ≥ ${qualidade.meta}%` : 'Qualidade do registro'}
+          titulo={produtividade?.nome ?? 'Produtividade'}
+          valor={produtividade && ultimoMesComDado ? valorIndicador(valorNoMes(produtividade.id, ultimoMesComDado), '%') : '—'}
+          nota={produtividade?.meta ? `I1 · meta ≥ ${produtividade.meta}%` : 'I1'}
         />
         <Cartao titulo="Indicadores monitorados" valor={indicadores.length} nota="Ativos no dicionário" />
         <Cartao

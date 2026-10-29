@@ -2,7 +2,7 @@
 
 export type Papel = 'gestor' | 'coordenador' | 'profissional';
 export type Nivel = 'executa' | 'apoia' | 'verificar' | 'nao';
-export type TipoIndicador = 'percentual' | 'contagem' | 'razao';
+export type TipoIndicador = 'percentual' | 'contagem' | 'razao' | 'complemento' | 'variacao';
 export type TipoCampo =
   | 'texto'
   | 'texto_longo'
@@ -116,6 +116,13 @@ export interface Indicador {
   versao: number;
   ativo: boolean;
   updated_at: string;
+  origem: string | null;
+  variavel_a: string | null;
+  variavel_b: string | null;
+  granularidade: string | null;
+  criterio: string | null;
+  situacao_dados: string;
+  numerador_ate_denominador: boolean;
 }
 
 export interface Lancamento {
@@ -130,6 +137,8 @@ export interface Lancamento {
   versao_formula: number;
   tipo_aplicado: TipoIndicador;
   fator_aplicado: number;
+  data_extracao: string | null;
+  validado: boolean;
   created_at: string;
   updated_at: string;
   // campos que a visão v_lancamentos acrescenta

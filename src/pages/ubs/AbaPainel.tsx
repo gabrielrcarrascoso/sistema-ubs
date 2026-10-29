@@ -5,7 +5,7 @@ import { ok, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
 import type { Aplicacao, Atividade, CampoFicha, Coleta, Competencia, Equipe, Pendencia, Questionario, Unidade } from '../../lib/types';
 import { dataBR, mesAno, numeroBR, ultimosMeses } from '../../lib/util';
-import { GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../../lib/paineis';
+import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../../lib/paineis';
 import { buscarProducao, buscarProfissionais, corDaCategoria, resumirProducao, TIPOS } from '../../lib/producao';
 import { Carregando, Erro } from '../../components/ui';
 import {
@@ -67,8 +67,8 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
   // ---- indicadores ----
   const ultimo = ultimoMesComDado(lancamentos);
   const noUltimo = (id: string) => lancamentos.find(l => l.indicador_id === id && ultimo && l.competencia.startsWith(ultimo.slice(0, 7)));
-  const indicadorProd = indicadores.find(i => i.codigo === 'PROD-01');
-  const serieProd = indicadorProd ? serieMensal(lancamentos, indicadorProd.id) : null;
+  const indicadorProd = indicadores.find(i => i.codigo === CODIGO_ATENDIMENTOS);
+  const serieProd = indicadorProd ? serieMensal(lancamentos, indicadorProd.id, 12, 'numerador') : null;
   const temProducao = serieProd?.pontos.some(p => p !== null);
 
   // ---- ocupação (última visita de cada atividade) ----
