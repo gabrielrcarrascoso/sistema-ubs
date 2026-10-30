@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useConfirmar } from '../../components/Confirmacao';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarPlus, Download, Pencil, Trash2, Upload } from 'lucide-react';
+import { CalendarPlus, CheckCheck, Download, Pencil, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
@@ -32,6 +32,7 @@ export function Lancamentos() {
   const [filtroUnidade, setFiltroUnidade] = useState('');
   const [filtroIndicador, setFiltroIndicador] = useState('');
   const [meses, setMeses] = useState(12);
+  const [filtroValidacao, setFiltroValidacao] = useState<'' | 'a_validar' | 'validados'>('');
   const [form, setForm] = useState<Formulario | null>(null);
   const [importando, setImportando] = useState(false);
   const [params] = useSearchParams();
@@ -100,6 +101,15 @@ export function Lancamentos() {
     lancQ.recarregar();
   }
 
+  // validar = alguém conferiu o número na fonte; o sistema guarda quem e quando
+  async function validar(ids: string[]) {
+    setErro(null);
+    const { error } = await supabase.from('lancamentos').update({ validado: true }).in('id', ids);
+    if (error) return setErro(traduzErro(error));
+    setAviso(`${ids.length} número(s) validado(s).`);
+    lancQ.recarregar();
+  }
+
   async function remover(l: Lancamento) {
     if (!(await confirmar(`Remover o número de "${l.indicador_nome}" · ${l.unidade_nome} · ${mesAno(l.competencia)}?`, { perigo: true }))) return;
     const { error } = await supabase.from('lancamentos').delete().eq('id', l.id);
@@ -110,17 +120,21 @@ export function Lancamentos() {
   function exportar() {
     baixarCSV(
       [
-        ['codigo', 'indicador', 'unidade', 'competencia', 'numerador', 'denominador', 'valor', 'fonte', 'versao_formula', 'observacao', 'atualizado_em'],
+        ['codigo', 'indicador', 'unidade', 'competencia', 'numerador', 'denominador', 'valor', 'fonte', 'data_extracao', 'validado', 'validado_em', 'versao_formula', 'observacao', 'atualizado_em'],
         ...(lancQ.dados ?? []).map(l => [
           l.codigo, l.indicador_nome, l.unidade_nome, l.competencia.slice(0, 7), l.numerador, l.denominador ?? '',
-          l.valor ?? '', l.fonte, l.versao_formula, l.observacao ?? '', dataHoraBR(l.updated_at),
+          l.valor ?? '', l.fonte, l.data_extracao ?? '', l.validado ? 'sim' : 'não', l.validado_em ? dataHoraBR(l.validado_em) : '',
+          l.versao_formula, l.observacao ?? '', dataHoraBR(l.updated_at),
         ]),
       ],
       'lancamentos_indicadores.csv',
     );
   }
 
-  const lancamentos = [...(lancQ.dados ?? [])].reverse();
+  const lancamentos = [...(lancQ.dados ?? [])]
+    .reverse()
+    .filter(l => (filtroValidacao === 'a_validar' ? !l.validado : filtroValidacao === 'validados' ? l.validado : true));
+  const aValidar = lancamentos.filter(l => !l.validado && podeEditar(l.unidade_id));
 
   return (
     <>
@@ -140,12 +154,29 @@ export function Lancamentos() {
           <option value="">Todos os indicadores</option>
           {indicadores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
         </select>
+        <select value={filtroValidacao} onChange={e => setFiltroValidacao(e.target.value as typeof filtroValidacao)} aria-label="Validação">
+          <option value="">Validados e a validar</option>
+          <option value="a_validar">Só a validar</option>
+          <option value="validados">Só validados</option>
+        </select>
         <select value={meses} onChange={e => setMeses(Number(e.target.value))} aria-label="Período">
           <option value={6}>Últimos 6 meses</option>
           <option value={12}>Últimos 12 meses</option>
           <option value={24}>Últimos 24 meses</option>
         </select>
         <div className="actions" style={{ marginLeft: 'auto' }}>
+          {aValidar.length > 0 && (
+            <button
+              className="btn"
+              title="Marca como conferidos todos os números a validar que estão na lista abaixo"
+              onClick={async () => {
+                if (await confirmar(`Validar ${aValidar.length} número(s) da lista? Faça isso só depois de conferir os números na fonte.`, { botao: 'Validar' }))
+                  validar(aValidar.map(l => l.id));
+              }}
+            >
+              <CheckCheck size={16} strokeWidth={1.8} /> Validar {aValidar.length}
+            </button>
+          )}
           <button className="btn" onClick={exportar} title="Baixar os registros abaixo em planilha"><Download size={16} strokeWidth={1.8} /> Exportar</button>
           {unidadesEditaveis.length > 0 && (
             <>
@@ -190,12 +221,16 @@ export function Lancamentos() {
                         <span className="chip warn" style={{ marginLeft: 6 }} title="Calculado com uma versão anterior da fórmula">fórmula antiga</span>
                       )}
                     </td>
-                    <td className="muted celula-fonte" title={`${l.fonte}${l.data_extracao ? ` · extraído em ${dataBR(l.data_extracao)}` : ''}`}>
+                    <td
+                      className="muted celula-fonte"
+                      title={`${l.fonte}${l.data_extracao ? ` · extraído em ${dataBR(l.data_extracao)}` : ''}${l.validado_em ? ` · validado em ${dataHoraBR(l.validado_em)}` : ''}`}
+                    >
                       {l.validado ? <span className="chip">validado</span> : <span className="chip neutral">a validar</span>} {l.fonte}
                     </td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {podeEditar(l.unidade_id) && (
                         <>
+                          {!l.validado && <BotaoIcone icone={ShieldCheck} titulo="Validar (número conferido na fonte)" aoClicar={() => validar([l.id])} />}
                           <BotaoIcone icone={Pencil} titulo="Editar" aoClicar={() => editar(l)} />
                           <BotaoIcone icone={Trash2} titulo="Remover" perigo aoClicar={() => remover(l)} />
                         </>

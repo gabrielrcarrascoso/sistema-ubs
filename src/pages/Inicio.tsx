@@ -40,7 +40,7 @@ export function Inicio() {
   const mesPassado = ultimosMeses(2)[0];
   const [janela, setJanela] = useState<'profissionais' | 'pendencias' | null>(null);
 
-  const { dados, carregando, erro } = useConsulta(async () => {
+  const { dados, carregando, erro, recarregar } = useConsulta(async () => {
     const [unidades, campos, todasPendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao, profissionais] = await Promise.all([
       buscarUnidades(),
       buscarCamposFicha(true),
@@ -358,6 +358,7 @@ export function Inicio() {
           profissionais={profissionais}
           aoFechar={() => setJanela(null)}
           aoAbrirEquipe={id => abrirUBS(id, 'equipe')}
+          aoAlterar={recarregar}
         />
       )}
       {janela === 'pendencias' && (

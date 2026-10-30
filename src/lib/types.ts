@@ -139,6 +139,8 @@ export interface Lancamento {
   fator_aplicado: number;
   data_extracao: string | null;
   validado: boolean;
+  validado_por: string | null;
+  validado_em: string | null;
   created_at: string;
   updated_at: string;
   // campos que a visão v_lancamentos acrescenta

@@ -1067,3 +1067,15 @@ a.ind-cartao:hover { border-color: var(--primario-borda); transform: translateY(
 .lista-prof-topo .ver-tudo { margin-left: auto; }
 .lista-prof-cargos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 @media (hover: none) { .numero-ir { opacity: 0.8; } }
+.linha-edicao td { background: var(--primario-suave); }
+.linha-edicao .form-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.modal .linha-edicao form > .actions:last-child { position: static; margin: 10px 0 0; padding: 0; border-top: 0; background: none; }
+
+/* importar planilha */
+.arquivo-planilha { position: relative; display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1.5px dashed var(--linha-forte); border-radius: 14px; background: var(--superficie-2); cursor: pointer; color: var(--primario-texto); }
+.arquivo-planilha:hover { border-color: var(--primario-borda); background: var(--primario-suave); }
+.arquivo-planilha span { display: grid; gap: 2px; color: var(--text); }
+.arquivo-planilha input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.opcoes-importar { display: grid; gap: 8px; font-size: 13.5px; }
+.opcoes-importar label { display: flex; gap: 8px; align-items: flex-start; }
+.opcoes-importar input { margin-top: 3px; }

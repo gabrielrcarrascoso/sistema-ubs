@@ -29,7 +29,7 @@ const rolarAte = (id: string) => document.getElementById(id)?.scrollIntoView({ b
 export function AbaPainel({ unidade: u, campos, aoIrPara }: { unidade: Unidade; campos: CampoFicha[]; aoIrPara: (aba: string) => void }) {
   const navegar = useNavigate();
   const [verProfissionais, setVerProfissionais] = useState(false);
-  const { dados, carregando, erro } = useConsulta(async () => {
+  const { dados, carregando, erro, recarregar } = useConsulta(async () => {
     const [equipes, atividades, pendencias, coletas, indicadores, lancamentos, questionarios, aplicacoes, producao, profissionais] = await Promise.all([
       supabase.from('equipes').select('*').eq('unidade_id', u.id).order('ordem').then(ok<Equipe[]>),
       supabase.from('atividades').select('*').order('ordem').then(ok<Atividade[]>),
@@ -273,6 +273,7 @@ export function AbaPainel({ unidade: u, campos, aoIrPara }: { unidade: Unidade; 
           equipes={equipes}
           profissionais={profissionais}
           aoFechar={() => setVerProfissionais(false)}
+          aoAlterar={recarregar}
           aoAbrirEquipe={() => {
             setVerProfissionais(false);
             aoIrPara('equipe');

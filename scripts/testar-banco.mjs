@@ -113,5 +113,12 @@ await t('I4 nao aceita numerador > denominador', await como(null, lanca('I4', 50
 await t('C2 nao aceita denominador zero', await como(null, lanca('C2', 50, 0)), /denominador maior que zero/);
 await t('lancamento comeca nao validado', await como(U1, `select bool_and(not validado) as v from public.lancamentos`), [{v:true}]);
 
+// ---------- Validação dos números ----------
+const L_I3 = `(select id from public.lancamentos where indicador_id=${IND('I3')} limit 1)`;
+await t('gestor valida um numero', await como(U1, `update public.lancamentos set validado=true where id=${L_I3} returning validado, validado_por is not null as quem, validado_em is not null as quando`), [{validado:true,quem:true,quando:true}]);
+await t('mudar o numero desfaz a validacao', await como(U1, `update public.lancamentos set numerador=31 where id=${L_I3} returning validado, validado_por`), [{validado:false,validado_por:null}]);
+await t('v_lancamentos mostra a validacao', await como(U1, `select validado from public.v_lancamentos where codigo='I3'`), [{validado:false}]);
+await t('adm de outra UBS nao valida', await como(U2, `update public.lancamentos set validado=true where unidade_id=${R1} returning id`), []);
+
 console.log(falhas ?`\n${falhas} teste(s) falharam.` : '\nTodos os testes passaram.');
 process.exit(falhas ? 1 : 0);
