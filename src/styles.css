@@ -1014,3 +1014,20 @@ tr:hover td { background: var(--superficie-2); }
   :root:not([data-theme='dark']) .top p { color: var(--muted); }
   :root:not([data-theme='dark']) .top::after { display: none; }
 }
+
+/* =====================================================================
+   INDICADORES NO PAINEL DA UBS (os 8 sempre visíveis, com o que falta lançar)
+   ===================================================================== */
+.indicadores-ubs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 12px; }
+.ind-cartao { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--superficie); }
+.ind-cartao.vazio { background: var(--superficie-2); border-style: dashed; border-color: var(--linha-forte); }
+.ind-topo { display: flex; align-items: flex-start; gap: 8px; }
+.ind-codigo { flex-shrink: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; padding: 3px 7px; border-radius: 7px; background: var(--primario-suave); color: var(--primario-texto); }
+.ind-nome { font-size: 13.5px; line-height: 1.3; }
+.ind-valor { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ind-cartao.vazio .ind-valor { color: var(--muted); }
+.ind-barra { height: 8px; }
+.ind-meta { font-size: 12px; color: var(--muted); }
+.ind-rodape { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; padding-top: 4px; }
+.ind-precisa { font-size: 12px; line-height: 1.45; color: var(--tinta-2); }
+.ind-precisa b { font-weight: 650; color: var(--text); }

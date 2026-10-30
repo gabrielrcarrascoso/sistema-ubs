@@ -4,14 +4,15 @@ import { supabase } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../../lib/indicadores';
 import type { Aplicacao, Atividade, CampoFicha, Coleta, Competencia, Equipe, Pendencia, Questionario, Unidade } from '../../lib/types';
-import { dataBR, mesAno, numeroBR, ultimosMeses } from '../../lib/util';
-import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../../lib/paineis';
+import { dataBR, numeroBR, ultimosMeses } from '../../lib/util';
+import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal } from '../../lib/paineis';
 import { buscarProducao, buscarProfissionais, corDaCategoria, nomeEquipe, resumirProducao, TIPOS } from '../../lib/producao';
 import { Carregando, Erro } from '../../components/ui';
 import {
-  BarraMeta, BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Legenda, Linhas, Numero, SeloSituacao,
+  BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Legenda, Linhas, Numero, SeloSituacao,
 } from '../../components/graficos';
 import { calcularCapacidade } from './AbaColetas';
+import { IndicadoresUBS } from './IndicadoresUBS';
 import { preenchimentoFicha } from './AbaFicha';
 
 const PESO = { Alta: 0, Média: 1, Baixa: 2 } as const;
@@ -64,9 +65,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
   });
   const semResponsavel = cobertura.filter(c => c.valores[0] === 0);
 
-  // ---- indicadores ----
-  const ultimo = ultimoMesComDado(lancamentos);
-  const noUltimo = (id: string) => lancamentos.find(l => l.indicador_id === id && ultimo && l.competencia.startsWith(ultimo.slice(0, 7)));
+  // ---- atendimentos por mês (vêm do C1) ----
   const indicadorProd = indicadores.find(i => i.codigo === CODIGO_ATENDIMENTOS);
   const serieProd = indicadorProd ? serieMensal(lancamentos, indicadorProd.id, 12, 'numerador') : null;
   const temProducao = serieProd?.pontos.some(p => p !== null);
@@ -193,24 +192,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           />
         </CartaoGrafico>
 
-        <CartaoGrafico
-          titulo="Indicadores × meta"
-          subtitulo={ultimo ? `Último mês com dados: ${mesAno(ultimo)}` : 'Valores do último mês lançado'}
-          tabela={{
-            cabecalho: ['Indicador', 'Valor', 'Meta'],
-            linhas: indicadores.map(i => [i.nome, noUltimo(i.id)?.valor ?? '—', i.meta ?? '—']),
-          }}
-        >
-          {ultimo ? (
-            <div className="lista-metas">
-              {indicadores.map(i => (
-                <BarraMeta key={i.id} nome={i.nome} valor={noUltimo(i.id)?.valor ?? null} meta={i.meta} sentido={i.sentido_meta} unidade={i.unidade_medida} />
-              ))}
-            </div>
-          ) : (
-            <GraficoVazio>Ainda não há números lançados para esta UBS. <Link to="/indicadores?aba=lancar&novo=1">Lançar o mês</Link></GraficoVazio>
-          )}
-        </CartaoGrafico>
+        <IndicadoresUBS unidadeId={u.id} indicadores={indicadores} lancamentos={lancamentos} />
 
         {(temProducao || !prod) && (
           <CartaoGrafico
