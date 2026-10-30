@@ -11,11 +11,11 @@
     "test:banco": "node scripts/testar-banco.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.4",
+    "@supabase/supabase-js": "2.117.3",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
+    "react-router-dom": "6.30.6",
     "read-excel-file": "9.3.10"
   },
   "devDependencies": {
