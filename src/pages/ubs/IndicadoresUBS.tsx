@@ -48,7 +48,12 @@ export function IndicadoresUBS({ unidadeId, indicadores, lancamentos }: { unidad
           const pct = i.unidade_medida === '%';
           const max = pct ? Math.max(100, l?.valor ?? 0, i.meta ?? 0) : Math.max(l?.valor ?? 0, i.meta ?? 0, 1) * 1.15;
           return (
-            <article key={i.id} className={`ind-cartao ${l ? '' : 'vazio'}`}>
+            <Link
+              key={i.id}
+              to={l ? '/indicadores?aba=painel' : '/indicadores?aba=definicoes'}
+              className={`ind-cartao ${l ? '' : 'vazio'}`}
+              title={l ? 'Ver no painel de indicadores' : 'Ver como este indicador é calculado'}
+            >
               <div className="ind-topo">
                 <span className="ind-codigo">{i.codigo}</span>
                 <b className="ind-nome">{i.nome}</b>
@@ -80,7 +85,7 @@ export function IndicadoresUBS({ unidadeId, indicadores, lancamentos }: { unidad
                   </span>
                 )}
               </div>
-            </article>
+            </Link>
           );
         })}
       </div>

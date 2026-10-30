@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, MinusCircle, Table2, BarChart3 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, MinusCircle, Table2, BarChart3 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Gráficos do sistema (SVG/HTML puros, sem biblioteca externa).
@@ -45,6 +45,23 @@ function useDica() {
   return { mostrar, esconder, elemento };
 }
 
+/** Props para tornar uma linha/bloco clicável (mouse e teclado) */
+function clicavel(aoClicar: (() => void) | undefined, titulo?: string) {
+  if (!aoClicar) return {};
+  return {
+    role: 'button',
+    tabIndex: 0,
+    title: titulo,
+    onClick: aoClicar,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        aoClicar();
+      }
+    },
+  };
+}
+
 // ---------- Moldura de cada gráfico ----------
 export function CartaoGrafico({
   titulo,
@@ -53,6 +70,8 @@ export function CartaoGrafico({
   tabela,
   acoes,
   className,
+  verTudo,
+  id,
 }: {
   titulo: string;
   subtitulo?: ReactNode;
@@ -60,10 +79,13 @@ export function CartaoGrafico({
   tabela?: { cabecalho: string[]; linhas: (string | number)[][] };
   acoes?: ReactNode;
   className?: string;
+  /** link "Ver tudo →" no canto do cartão */
+  verTudo?: { rotulo?: string; aoClicar: () => void };
+  id?: string;
 }) {
   const [verTabela, setVerTabela] = useState(false);
   return (
-    <section className={`cartao-grafico ${className ?? ''}`}>
+    <section className={`cartao-grafico ${className ?? ''}`} id={id}>
       <header>
         <div>
           <h2>{titulo}</h2>
@@ -71,6 +93,11 @@ export function CartaoGrafico({
         </div>
         <div className="cartao-grafico-acoes">
           {acoes}
+          {verTudo && (
+            <button className="btn small ver-tudo nao-imprimir" onClick={verTudo.aoClicar}>
+              {verTudo.rotulo ?? 'Ver tudo'} <ChevronRight size={14} strokeWidth={2} />
+            </button>
+          )}
           {tabela && (
             <button
               className="btn icone nao-imprimir"
@@ -128,7 +155,7 @@ export function BarrasH({
   referencia,
   maximo,
 }: {
-  itens: { rotulo: string; valor: number; detalhe?: string; cor?: string }[];
+  itens: { rotulo: string; valor: number; detalhe?: string; cor?: string; aoClicar?: () => void }[];
   sufixo?: string;
   cor?: string;
   referencia?: { valor: number; rotulo: string };
@@ -140,8 +167,9 @@ export function BarrasH({
     <div className="grafico barras-h" onMouseLeave={esconder}>
       {itens.map(i => (
         <div
-          className="barra-linha"
+          className={`barra-linha ${i.aoClicar ? 'clicavel' : ''}`}
           key={i.rotulo}
+          {...clicavel(i.aoClicar, `Abrir ${i.rotulo}`)}
           onMouseMove={e => mostrar(e, <><b>{i.rotulo}</b><span>{fmt(i.valor)}{sufixo}</span>{i.detalhe && <small>{i.detalhe}</small>}</>)}
         >
           <span className="barra-rotulo" title={i.rotulo}>{i.rotulo}</span>
@@ -174,7 +202,7 @@ export function BarrasEmpilhadasH({
   percentual,
 }: {
   series: { nome: string; cor: string }[];
-  linhas: { rotulo: string; valores: number[]; destaque?: ReactNode }[];
+  linhas: { rotulo: string; valores: number[]; destaque?: ReactNode; aoClicar?: () => void }[];
   sufixo?: string;
   percentual?: boolean; // cada linha soma 100%
 }) {
@@ -188,7 +216,7 @@ export function BarrasEmpilhadasH({
           const total = l.valores.reduce((a, b) => a + b, 0);
           const base = percentual ? total || 1 : max;
           return (
-            <div className="barra-linha" key={l.rotulo}>
+            <div className={`barra-linha ${l.aoClicar ? 'clicavel' : ''}`} key={l.rotulo} {...clicavel(l.aoClicar, `Abrir ${l.rotulo}`)}>
               <span className="barra-rotulo" title={l.rotulo}>{l.rotulo}</span>
               <span className="barra-trilho empilhada">
                 {l.valores.map((v, i) =>
@@ -365,15 +393,21 @@ export function Numero({
   detalhe,
   destaque,
   icone,
+  aoClicar,
+  dica,
 }: {
   rotulo: string;
   valor: ReactNode;
   detalhe?: ReactNode;
   destaque?: boolean;
   icone?: ReactNode;
+  aoClicar?: () => void;
+  /** o que acontece ao clicar (aparece ao passar o mouse; ex.: "Ver lista") */
+  dica?: string;
 }) {
   return (
-    <div className={`numero ${destaque ? 'destaque' : ''}`}>
+    <div className={`numero ${destaque ? 'destaque' : ''} ${aoClicar ? 'clicavel' : ''}`} {...clicavel(aoClicar, dica ?? rotulo)}>
+      {aoClicar && <span className="numero-ir" aria-hidden="true"><ChevronRight size={16} strokeWidth={2.2} /></span>}
       <div className="numero-rotulo">{icone}{rotulo}</div>
       <div className="numero-valor">{valor}</div>
       {detalhe && <div className="numero-detalhe">{detalhe}</div>}

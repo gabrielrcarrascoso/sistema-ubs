@@ -1031,3 +1031,39 @@ tr:hover td { background: var(--superficie-2); }
 .ind-rodape { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; padding-top: 4px; }
 .ind-precisa { font-size: 12px; line-height: 1.45; color: var(--tinta-2); }
 .ind-precisa b { font-weight: 650; color: var(--text); }
+
+/* =====================================================================
+   PAINÉIS NAVEGÁVEIS: números, linhas de gráfico e listas levam ao detalhe
+   ===================================================================== */
+.numero.clicavel { position: relative; cursor: pointer; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+.numero.clicavel:hover { border-color: var(--primario-borda); transform: translateY(-2px); }
+.numero.clicavel .numero-rotulo { padding-right: 18px; }
+.numero-ir { position: absolute; top: 14px; right: 12px; display: grid; place-items: center; color: var(--primario-texto); opacity: 0.45; transition: opacity 0.15s, transform 0.15s; }
+.numero.clicavel:hover .numero-ir, .numero.clicavel:focus-visible .numero-ir { opacity: 1; transform: translateX(2px); }
+.numero.destaque .numero-ir { color: var(--sol); }
+:root:not([data-theme='dark']) .numero.destaque .numero-ir { color: var(--primario-texto); }
+
+.barra-linha.clicavel { cursor: pointer; border-radius: 8px; margin: 0 -6px; padding: 2px 6px; transition: background 0.15s; }
+.barra-linha.clicavel:hover { background: var(--superficie-2); }
+.barra-linha.clicavel:hover .barra-rotulo { color: var(--primario-texto); text-decoration: underline; text-underline-offset: 2px; }
+.lista-compacta-item.clicavel { cursor: pointer; border-radius: 8px; transition: background 0.15s; }
+.lista-compacta-item.clicavel:hover { background: var(--superficie-2); }
+.numero.clicavel:focus-visible, .barra-linha.clicavel:focus-visible, .lista-compacta-item.clicavel:focus-visible, a.ind-cartao:focus-visible {
+  outline: 2px solid var(--foco); outline-offset: 2px;
+}
+
+.btn.ver-tudo, :root:not([data-theme='dark']) .btn.ver-tudo {
+  gap: 2px; padding: 5px 8px; font-size: 12.5px; color: var(--primario-texto); background: transparent; border-color: transparent; box-shadow: none;
+}
+.btn.ver-tudo:hover:not(:disabled), :root:not([data-theme='dark']) .btn.ver-tudo:hover:not(:disabled) { background: var(--primario-suave); border-color: transparent; }
+
+a.ind-cartao { color: inherit; text-decoration: none; transition: border-color 0.15s, transform 0.15s; }
+a.ind-cartao:hover { border-color: var(--primario-borda); transform: translateY(-2px); }
+
+/* janelas de lista (profissionais, pendências) */
+.lista-prof { margin-bottom: 20px; }
+.lista-prof-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.lista-prof-topo h3 { margin: 0; font-size: 15px; }
+.lista-prof-topo .ver-tudo { margin-left: auto; }
+.lista-prof-cargos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+@media (hover: none) { .numero-ir { opacity: 0.8; } }

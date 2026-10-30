@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Activity, BarChart3, ChevronRight, CircleCheck, ClipboardList, FileText, Flag, Hospital, Hourglass, PenLine, UserCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
@@ -6,10 +7,11 @@ import { buscarUnidades, ok, useConsulta } from '../lib/hooks';
 import { buscarIndicadores, buscarLancamentos } from '../lib/indicadores';
 import type { Aplicacao, Equipe, Pendencia, Questionario } from '../lib/types';
 import { mesAno, NOME_PAPEL, numeroBR, ultimosMeses } from '../lib/util';
-import { Cabecalho, Carregando, Erro } from '../components/ui';
+import { Cabecalho, Carregando, Erro, Modal } from '../components/ui';
+import { ModalProfissionais } from '../components/ModalProfissionais';
 import { BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Linhas, Numero, SeloSituacao, SERIES } from '../components/graficos';
 import { CODIGO_ATENDIMENTOS, GRUPOS_CARGO, grupoDoCargo, serieMensal, ultimoMesComDado } from '../lib/paineis';
-import { buscarProducao, nomeEquipe, resumirProducao, TIPOS } from '../lib/producao';
+import { buscarProducao, buscarProfissionais, nomeEquipe, resumirProducao, TIPOS } from '../lib/producao';
 import { buscarCamposFicha } from './config/CamposFicha';
 import { preenchimentoFicha } from './ubs/AbaFicha';
 
@@ -36,9 +38,10 @@ export function Inicio() {
   const { perfil, ehGestor } = useAuth();
   const navegar = useNavigate();
   const mesPassado = ultimosMeses(2)[0];
+  const [janela, setJanela] = useState<'profissionais' | 'pendencias' | null>(null);
 
   const { dados, carregando, erro } = useConsulta(async () => {
-    const [unidades, campos, todasPendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao] = await Promise.all([
+    const [unidades, campos, todasPendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao, profissionais] = await Promise.all([
       buscarUnidades(),
       buscarCamposFicha(true),
       supabase.from('pendencias').select('*').eq('concluida', false).then(ok<Pendencia[]>),
@@ -49,6 +52,7 @@ export function Inicio() {
       ehGestor ? supabase.from('perfis').select('id', { count: 'exact', head: true }).eq('ativo', false) : Promise.resolve({ count: 0 }),
       supabase.from('equipes').select('unidade_id, cargo, quantidade').then(ok<Pick<Equipe, 'unidade_id' | 'cargo' | 'quantidade'>[]>),
       buscarProducao(),
+      buscarProfissionais(),
     ]);
     // só o que é das UBS ativas (as arquivadas não entram nos números)
     const ativa = (id: string | null) => !id || unidades.some(u => u.id === id);
@@ -56,12 +60,13 @@ export function Inicio() {
     return {
       unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando: aguardando.count ?? 0, equipes,
       producao: producao.filter(p => ativa(p.unidade_id)),
+      profissionais: profissionais.filter(p => ativa(p.unidade_id)),
     };
   }, [ehGestor, mesPassado], 'inicio');
 
   if (carregando) return <Carregando />;
   if (!dados || !perfil) return <Erro mensagem={erro} />;
-  const { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao } = dados;
+  const { unidades, campos, pendencias, questionarios, aplicacoes, indicadores, lancamentos12, aguardando, equipes, producao, profissionais } = dados;
 
   const minhaUBS = perfil.papel === 'coordenador' ? unidades.find(u => u.id === perfil.unidade_id) : undefined;
   const mensais = indicadores.filter(i => i.periodicidade === 'Mensal'); // os cobrados todo mês
@@ -118,10 +123,11 @@ export function Inicio() {
     const valores = GRUPOS_CARGO.map(() => 0);
     for (const e of equipes.filter(e => e.unidade_id === u.id)) valores[grupoDoCargo(e.cargo)] += e.quantidade ?? 0;
     const semQtd = equipes.some(e => e.unidade_id === u.id && e.quantidade === null);
-    return { rotulo: u.nome, valores, semQtd };
+    return { id: u.id, rotulo: u.nome, valores, semQtd };
   });
   const prioridades = ['Alta', 'Média', 'Baixa'] as const;
   const pendPorUBS = unidades.map(u => ({
+    id: u.id,
     rotulo: u.nome,
     valores: prioridades.map(pr => pendencias.filter(p => p.unidade_id === u.id && p.prioridade === pr).length),
   }));
@@ -138,10 +144,19 @@ export function Inicio() {
   const valorNoUltimo = (uid: string, iid: string) =>
     lancamentos12.find(l => l.unidade_id === uid && l.indicador_id === iid && ultimo && l.competencia.startsWith(ultimo.slice(0, 7)));
 
-  const abrirPainel = (id: string) => {
-    lembrarUnidade(id);
-    navegar('/ubs?aba=painel');
+  // tudo no painel leva a algum lugar: a UBS na aba certa, uma lista ou a tela completa
+  const abrirUBS = (id: string | null | undefined, aba = 'painel') => {
+    lembrarUnidade(id ?? undefined);
+    navegar(`/ubs?aba=${aba}`);
   };
+  const abrirPainel = (id: string) => abrirUBS(id);
+  const rolarAte = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const primeiraIncompleta = unidades.find(u => preenchimentoFicha(u, campos) < 100) ?? unidades[0];
+  const PESO = { Alta: 0, Média: 1, Baixa: 2 } as const;
+  const gruposPendencias = [
+    ...unidades.map(u => ({ id: u.id as string | null, nome: u.nome, itens: pendencias.filter(p => p.unidade_id === u.id) })),
+    { id: null, nome: 'Todas as UBS', itens: pendencias.filter(p => !p.unidade_id) },
+  ].filter(g => g.itens.length);
 
   return (
     <>
@@ -158,12 +173,14 @@ export function Inicio() {
             rotulo={`Registros no e-SUS · ${prod.periodo}`}
             valor={numeroBR(prod.total, 0)}
             detalhe={`≈${numeroBR(prod.mediaMensal, 0)} por mês em ${prod.porCategoria.length} equipes de ${unidades.length} UBS`}
+            aoClicar={() => rolarAte('inicio-registros')}
+            dica="Ver gráficos"
           />
         )}
-        <Numero destaque={!prod} icone={<Users size={15} strokeWidth={2} />} rotulo="Profissionais nas UBS" valor={totalProf} detalhe={`em ${unidades.length} unidade(s) acompanhada(s)`} />
-        <Numero icone={<FileText size={15} strokeWidth={2} />} rotulo="Fichas preenchidas" valor={`${numeroBR(fichaMedia, 0)}%`} detalhe={<span className="mini-trilho"><span style={{ width: `${fichaMedia}%` }} /></span>} />
-        <Numero icone={<Flag size={15} strokeWidth={2} />} rotulo="Pendências abertas" valor={pendencias.length} detalhe={altasAbertas ? `${altasAbertas} de prioridade alta` : 'nenhuma urgente'} />
-        <Numero icone={<BarChart3 size={15} strokeWidth={2} />} rotulo={`Indicadores de ${mesAno(mesPassado)}`} valor={`${lancados}/${esperados}`} detalhe="números lançados" />
+        <Numero destaque={!prod} icone={<Users size={15} strokeWidth={2} />} rotulo="Profissionais nas UBS" valor={totalProf} detalhe={`em ${unidades.length} unidade(s) acompanhada(s)`} aoClicar={() => setJanela('profissionais')} dica="Ver lista" />
+        <Numero icone={<FileText size={15} strokeWidth={2} />} rotulo="Fichas preenchidas" valor={`${numeroBR(fichaMedia, 0)}%`} aoClicar={() => abrirUBS(primeiraIncompleta?.id, 'ficha')} dica="Abrir ficha" detalhe={<span className="mini-trilho"><span style={{ width: `${fichaMedia}%` }} /></span>} />
+        <Numero icone={<Flag size={15} strokeWidth={2} />} rotulo="Pendências abertas" valor={pendencias.length} aoClicar={() => setJanela('pendencias')} dica="Ver lista" detalhe={altasAbertas ? `${altasAbertas} de prioridade alta` : 'nenhuma urgente'} />
+        <Numero icone={<BarChart3 size={15} strokeWidth={2} />} rotulo={`Indicadores de ${mesAno(mesPassado)}`} valor={`${lancados}/${esperados}`} detalhe="números lançados" aoClicar={() => navegar('/indicadores?aba=qualidade')} dica="Ver o que falta" />
       </div>
 
       <div className="painel-grade">
@@ -199,6 +216,8 @@ export function Inicio() {
             <CartaoGrafico
               titulo="Registros por UBS e equipe"
               subtitulo={`Total de ${prod.periodo}, por categoria profissional · e-SUS`}
+              id="inicio-registros"
+              verTudo={{ rotulo: 'Profissionais', aoClicar: () => setJanela('profissionais') }}
               tabela={{
                 cabecalho: ['UBS / equipe', ...prod.categorias.map(c => c.nome), 'Total', 'Média mensal'],
                 linhas: prod.porCategoria.map(l => {
@@ -207,14 +226,14 @@ export function Inicio() {
                 }),
               }}
             >
-              <BarrasEmpilhadasH series={prod.categorias.map(c => ({ nome: c.plural, cor: c.cor }))} linhas={prod.porCategoria} />
+              <BarrasEmpilhadasH series={prod.categorias.map(c => ({ nome: c.plural, cor: c.cor }))} linhas={prod.porCategoria.map(l => ({ ...l, aoClicar: () => abrirPainel(l.unidadeId) }))} />
             </CartaoGrafico>
             <CartaoGrafico
               titulo="Tipo de atendimento"
               subtitulo="Proporção de cada tipo em cada UBS e equipe"
               tabela={{ cabecalho: ['UBS / equipe', ...TIPOS.map(t => t.curto)], linhas: prod.porTipo.map(l => [l.rotulo, ...l.valores]) }}
             >
-              <BarrasEmpilhadasH series={TIPOS.map(t => ({ nome: t.curto, cor: t.cor }))} linhas={prod.porTipo} percentual />
+              <BarrasEmpilhadasH series={TIPOS.map(t => ({ nome: t.curto, cor: t.cor }))} linhas={prod.porTipo.map(l => ({ ...l, aoClicar: () => abrirPainel(l.unidadeId) }))} percentual />
             </CartaoGrafico>
           </>
         )}
@@ -223,10 +242,15 @@ export function Inicio() {
           titulo="Equipe por UBS"
           subtitulo="Profissionais por área de atuação"
           tabela={{ cabecalho: ['UBS', ...GRUPOS_CARGO.map(g => g.nome)], linhas: equipePorUBS.map(e => [e.rotulo, ...e.valores]) }}
+          verTudo={{ rotulo: 'Ver lista', aoClicar: () => setJanela('profissionais') }}
         >
           <BarrasEmpilhadasH
             series={GRUPOS_CARGO.map(g => ({ nome: g.nome, cor: g.cor }))}
-            linhas={equipePorUBS.map(e => ({ ...e, destaque: e.semQtd ? <span className="texto-alerta" title="Há cargos sem quantidade informada">incompleta</span> : undefined }))}
+            linhas={equipePorUBS.map(e => ({
+              ...e,
+              destaque: e.semQtd ? <span className="texto-alerta" title="Há cargos sem quantidade informada">incompleta</span> : undefined,
+              aoClicar: () => abrirUBS(e.id, 'equipe'),
+            }))}
             sufixo=" prof."
           />
         </CartaoGrafico>
@@ -236,17 +260,18 @@ export function Inicio() {
           subtitulo="Quanto das informações de cada UBS já foi informado"
           tabela={{ cabecalho: ['UBS', 'Preenchido (%)'], linhas: unidades.map(u => [u.nome, Math.round(preenchimentoFicha(u, campos))]) }}
         >
-          <BarrasH itens={unidades.map(u => ({ rotulo: u.nome, valor: Math.round(preenchimentoFicha(u, campos)) }))} sufixo="%" maximo={100} />
+          <BarrasH itens={unidades.map(u => ({ rotulo: u.nome, valor: Math.round(preenchimentoFicha(u, campos)), aoClicar: () => abrirUBS(u.id, 'ficha') }))} sufixo="%" maximo={100} />
         </CartaoGrafico>
 
         <CartaoGrafico
           titulo="Pendências abertas"
           subtitulo="Por prioridade, em cada UBS"
           tabela={{ cabecalho: ['UBS', ...prioridades], linhas: pendPorUBS.map(p => [p.rotulo, ...p.valores]) }}
+          verTudo={{ rotulo: 'Ver lista', aoClicar: () => setJanela('pendencias') }}
         >
           <BarrasEmpilhadasH
             series={[{ nome: 'Alta', cor: CORES.serie2 }, { nome: 'Média', cor: CORES.serie4 }, { nome: 'Baixa', cor: CORES.neutro }]}
-            linhas={pendPorUBS}
+            linhas={pendPorUBS.map(p => ({ ...p, aoClicar: () => abrirUBS(p.id, 'restricoes') }))}
           />
         </CartaoGrafico>
 
@@ -254,6 +279,7 @@ export function Inicio() {
           titulo="Indicadores por UBS"
           subtitulo={ultimo ? `Último mês com dados: ${mesAno(ultimo)}` : 'Situação de cada indicador em cada UBS'}
           className="largo"
+          verTudo={{ rotulo: 'Indicadores', aoClicar: () => navegar('/indicadores') }}
         >
           {ultimo ? (
             <div className="tablewrap">
@@ -325,6 +351,46 @@ export function Inicio() {
           );
         })}
       </div>
+      {janela === 'profissionais' && (
+        <ModalProfissionais
+          unidades={unidades}
+          equipes={equipes}
+          profissionais={profissionais}
+          aoFechar={() => setJanela(null)}
+          aoAbrirEquipe={id => abrirUBS(id, 'equipe')}
+        />
+      )}
+      {janela === 'pendencias' && (
+        <Modal titulo={`Pendências abertas (${pendencias.length})`} aoFechar={() => setJanela(null)}>
+          {gruposPendencias.map(g => (
+            <section key={g.id ?? 'todas'} className="lista-prof">
+              <header className="lista-prof-topo"><h3>{g.nome}</h3><span className="muted">{g.itens.length}</span></header>
+              <div className="lista-compacta">
+                {[...g.itens].sort((a, b) => PESO[a.prioridade] - PESO[b.prioridade]).map(p => (
+                  <div
+                    key={p.id}
+                    className="lista-compacta-item clicavel"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => abrirUBS(p.unidade_id ?? unidades[0]?.id, 'restricoes')}
+                    title="Abrir as pendências desta UBS"
+                  >
+                    <span className={`chip ${p.prioridade === 'Alta' ? 'warn' : 'neutral'}`}>{p.prioridade}</span>
+                    <span>
+                      {p.texto}
+                      {p.motivo && <small className="muted" style={{ display: 'block' }}>{p.motivo}</small>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+          {!gruposPendencias.length && <p className="empty">Nenhuma pendência aberta.</p>}
+          <div className="actions">
+            <button className="btn" onClick={() => setJanela(null)}>Fechar</button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

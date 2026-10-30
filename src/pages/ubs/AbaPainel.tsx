@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Activity, CalendarDays, ClipboardCheck, EyeOff, FileText, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
@@ -11,14 +12,23 @@ import { Carregando, Erro } from '../../components/ui';
 import {
   BarrasEmpilhadasH, BarrasH, CartaoGrafico, CORES, GraficoVazio, Legenda, Linhas, Numero, SeloSituacao,
 } from '../../components/graficos';
+import { ModalProfissionais } from '../../components/ModalProfissionais';
 import { calcularCapacidade } from './AbaColetas';
 import { IndicadoresUBS } from './IndicadoresUBS';
 import { preenchimentoFicha } from './AbaFicha';
 
 const PESO = { Alta: 0, Média: 1, Baixa: 2 } as const;
 
-/** Painel (dashboard) de uma UBS: o retrato da unidade em gráficos */
-export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: CampoFicha[] }) {
+/** Rola até um cartão do painel (ex.: ao clicar no número de registros) */
+const rolarAte = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+/**
+ * Painel (dashboard) de uma UBS: o retrato da unidade em gráficos.
+ * Tudo leva a algum lugar: números abrem a lista ou a aba certa, linhas dos gráficos abrem o detalhe.
+ */
+export function AbaPainel({ unidade: u, campos, aoIrPara }: { unidade: Unidade; campos: CampoFicha[]; aoIrPara: (aba: string) => void }) {
+  const navegar = useNavigate();
+  const [verProfissionais, setVerProfissionais] = useState(false);
   const { dados, carregando, erro } = useConsulta(async () => {
     const [equipes, atividades, pendencias, coletas, indicadores, lancamentos, questionarios, aplicacoes, producao, profissionais] = await Promise.all([
       supabase.from('equipes').select('*').eq('unidade_id', u.id).order('ordem').then(ok<Equipe[]>),
@@ -88,6 +98,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
     valor: p.quantidade,
     cor: corDaCategoria(p.categoria),
     detalhe: `${p.categoria} · ≈${numeroBR(p.quantidade / (prod?.meses ?? 6), 0)} por mês`,
+    aoClicar: () => setVerProfissionais(true),
   }));
 
   return (
@@ -99,6 +110,8 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
             icone={<Activity size={15} strokeWidth={2} />}
             rotulo={`Registros no e-SUS · ${prod.periodo}`}
             valor={numeroBR(prod.total, 0)}
+            aoClicar={() => rolarAte('ubs-registros')}
+            dica="Ver gráficos"
             detalhe={`≈${numeroBR(prod.mediaMensal, 0)} por mês · ${prod.porCategoria.length > 1 ? 'equipes' : 'equipe'} ${prod.porCategoria.map(e => e.rotulo).join(' e ')}`}
           />
         )}
@@ -107,15 +120,17 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           icone={<Users size={15} strokeWidth={2} />}
           rotulo="Profissionais"
           valor={declarados ?? soma}
+          aoClicar={() => setVerProfissionais(true)}
+          dica="Ver lista"
           detalhe={
             semQtd.length ? `${semQtd.length} cargo(s) sem quantidade informada`
             : declarados !== null && declarados !== soma ? <span className="texto-alerta">{soma} discriminados por cargo — confere?</span>
             : `${equipes.length} cargos na equipe`
           }
         />
-        <Numero icone={<FileText size={15} strokeWidth={2} />} rotulo="Ficha preenchida" valor={`${numeroBR(pctFicha, 0)}%`} detalhe={<span className="mini-trilho"><span style={{ width: `${pctFicha}%` }} /></span>} />
-        <Numero icone={<ClipboardCheck size={15} strokeWidth={2} />} rotulo="Pendências abertas" valor={pendencias.length} detalhe={altas ? `${altas} de prioridade alta` : 'nenhuma urgente'} />
-        <Numero icone={<CalendarDays size={15} strokeWidth={2} />} rotulo="Última visita" valor={ultimaVisita ? dataBR(ultimaVisita) : '—'} detalhe={`${coletas.length} visita(s) registrada(s)`} />
+        <Numero icone={<FileText size={15} strokeWidth={2} />} rotulo="Ficha preenchida" valor={`${numeroBR(pctFicha, 0)}%`} aoClicar={() => aoIrPara('ficha')} dica="Abrir ficha" detalhe={<span className="mini-trilho"><span style={{ width: `${pctFicha}%` }} /></span>} />
+        <Numero icone={<ClipboardCheck size={15} strokeWidth={2} />} rotulo="Pendências abertas" valor={pendencias.length} aoClicar={() => aoIrPara('restricoes')} dica="Ver pendências" detalhe={altas ? `${altas} de prioridade alta` : 'nenhuma urgente'} />
+        <Numero icone={<CalendarDays size={15} strokeWidth={2} />} rotulo="Última visita" valor={ultimaVisita ? dataBR(ultimaVisita) : '—'} aoClicar={() => aoIrPara('coletas')} dica="Ver visitas" detalhe={`${coletas.length} visita(s) registrada(s)`} />
       </div>
 
       <div className="painel-grade">
@@ -124,6 +139,8 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
             <CartaoGrafico
               titulo="Registros por equipe e categoria"
               subtitulo={`Total de ${prod.periodo} · e-SUS`}
+              id="ubs-registros"
+              verTudo={{ rotulo: 'Profissionais', aoClicar: () => setVerProfissionais(true) }}
               tabela={{
                 cabecalho: ['Equipe', ...prod.categorias.map(c => c.nome), 'Total', 'Média mensal'],
                 linhas: prod.porCategoria.map(l => {
@@ -147,6 +164,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           <CartaoGrafico
             titulo="Registros por profissional"
             subtitulo={`${prod?.periodo ?? ''} · contagem de registros não mede produtividade nem horas trabalhadas`}
+            verTudo={{ rotulo: 'Ver lista', aoClicar: () => setVerProfissionais(true) }}
             className="largo"
             acoes={!nomesVisiveis && (
               <span className="chip neutral" title="Os nomes aparecem só para o administrador geral">
@@ -169,14 +187,15 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           titulo="Composição da equipe"
           subtitulo={semQtd.length ? `Sem quantidade: ${semQtd.map(e => e.cargo).join(', ')}` : 'Profissionais por cargo'}
           tabela={{ cabecalho: ['Cargo', 'Área', 'Profissionais'], linhas: itensEquipe.map(i => [i.rotulo, i.detalhe, i.valor]) }}
+          verTudo={{ rotulo: 'Ver lista', aoClicar: () => setVerProfissionais(true) }}
         >
           {itensEquipe.length ? (
             <>
               <Legenda itens={gruposPresentes.map(g => ({ nome: g.nome, cor: g.cor }))} />
-              <BarrasH itens={itensEquipe} />
+              <BarrasH itens={itensEquipe.map(i => ({ ...i, aoClicar: () => aoIrPara('equipe') }))} />
             </>
           ) : (
-            <GraficoVazio>Nenhum cargo com quantidade informada. <Link to="/ubs?aba=equipe">Preencher a equipe</Link></GraficoVazio>
+            <GraficoVazio>Nenhum cargo com quantidade informada. <button className="btn link" onClick={() => aoIrPara('equipe')}>Preencher a equipe</button></GraficoVazio>
           )}
         </CartaoGrafico>
 
@@ -184,10 +203,11 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           titulo="Quem faz cada atividade"
           subtitulo={semResponsavel.length ? <span className="texto-alerta">{semResponsavel.length} atividade(s) sem cargo principal</span> : 'Quantos cargos fazem cada atividade (matriz de competências)'}
           tabela={{ cabecalho: ['Atividade', 'Principal', 'Condicionada', 'A verificar'], linhas: cobertura.map(c => [c.rotulo, ...c.valores]) }}
+          verTudo={{ rotulo: 'Ver matriz', aoClicar: () => aoIrPara('equipe') }}
         >
           <BarrasEmpilhadasH
             series={[{ nome: 'Principal', cor: CORES.serie1 }, { nome: 'Condicionada', cor: CORES.serie3 }, { nome: 'A verificar', cor: CORES.serie4 }]}
-            linhas={cobertura.map(c => ({ ...c, destaque: c.valores[0] === 0 ? <SeloSituacao situacao="abaixo" texto="sem principal" /> : undefined }))}
+            linhas={cobertura.map(c => ({ ...c, destaque: c.valores[0] === 0 ? <SeloSituacao situacao="abaixo" texto="sem principal" /> : undefined, aoClicar: () => aoIrPara('equipe') }))}
             sufixo=" cargo(s)"
           />
         </CartaoGrafico>
@@ -211,6 +231,7 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
         <CartaoGrafico
           titulo="Ocupação da equipe por atividade"
           subtitulo="Da visita de campo mais recente de cada atividade · acima de 100% a demanda passa da capacidade"
+          verTudo={{ rotulo: 'Visitas', aoClicar: () => aoIrPara('coletas') }}
           tabela={{ cabecalho: ['Atividade', 'Ocupação (%)', 'Visita'], linhas: [...ocupacao].map(([a, o]) => [a, o.valor, dataBR(o.data)]) }}
         >
           {ocupacao.size ? (
@@ -220,23 +241,23 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
               referencia={{ valor: 100, rotulo: '100% = no limite' }}
             />
           ) : (
-            <GraficoVazio>Registre uma visita com o cálculo de capacidade para ver este gráfico. <Link to="/ubs?aba=coletas">Visitas de campo</Link></GraficoVazio>
+            <GraficoVazio>Registre uma visita com o cálculo de capacidade para ver este gráfico. <button className="btn link" onClick={() => aoIrPara('coletas')}>Visitas de campo</button></GraficoVazio>
           )}
         </CartaoGrafico>
 
-        <CartaoGrafico titulo="Pendências e questionários" subtitulo="O que esta UBS ainda precisa resolver">
+        <CartaoGrafico titulo="Pendências e questionários" subtitulo="O que esta UBS ainda precisa resolver" verTudo={{ rotulo: 'Ver todas', aoClicar: () => aoIrPara('restricoes') }}>
           <div className="lista-compacta">
             {questionarios.map(q => {
               const respondeu = aplicacoes.some(a => a.questionario_id === q.id);
               return (
-                <div key={q.id} className="lista-compacta-item">
+                <div key={q.id} className="lista-compacta-item clicavel" role="button" tabIndex={0} onClick={() => navegar(respondeu ? `/questionarios/${q.id}/resultados` : `/questionarios/${q.id}/responder`)}>
                   <SeloSituacao situacao={respondeu ? 'atingiu' : 'abaixo'} texto={respondeu ? 'Respondido' : 'Falta responder'} />
                   <span>Questionário “{q.titulo}”</span>
                 </div>
               );
             })}
             {pendOrdenadas.slice(0, 6).map(p => (
-              <div key={p.id} className="lista-compacta-item">
+              <div key={p.id} className="lista-compacta-item clicavel" role="button" tabIndex={0} onClick={() => aoIrPara('restricoes')}>
                 <span className={`chip ${p.prioridade === 'Alta' ? 'warn' : 'neutral'}`}>{p.prioridade}</span>
                 <span>{p.texto}</span>
               </div>
@@ -246,6 +267,18 @@ export function AbaPainel({ unidade: u, campos }: { unidade: Unidade; campos: Ca
           </div>
         </CartaoGrafico>
       </div>
+      {verProfissionais && (
+        <ModalProfissionais
+          unidades={[{ id: u.id, nome: u.nome }]}
+          equipes={equipes}
+          profissionais={profissionais}
+          aoFechar={() => setVerProfissionais(false)}
+          aoAbrirEquipe={() => {
+            setVerProfissionais(false);
+            aoIrPara('equipe');
+          }}
+        />
+      )}
     </>
   );
 }

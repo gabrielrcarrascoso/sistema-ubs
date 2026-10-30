@@ -77,10 +77,10 @@ export async function buscarProducao(unidadeId?: string) {
   return ok<Producao[]>(await q);
 }
 
-export async function buscarProfissionais(unidadeId: string) {
-  return ok<ProducaoProfissional[]>(
-    await supabase.from('v_producao_profissionais').select('*').eq('unidade_id', unidadeId).order('quantidade', { ascending: false }),
-  );
+export async function buscarProfissionais(unidadeId?: string) {
+  let q = supabase.from('v_producao_profissionais').select('*').order('quantidade', { ascending: false });
+  if (unidadeId) q = q.eq('unidade_id', unidadeId);
+  return ok<ProducaoProfissional[]>(await q);
 }
 
 /** Resumo do período mais recente: total, média mensal, por equipe × categoria e por equipe × tipo */
@@ -100,6 +100,7 @@ export function resumirProducao(linhas: Producao[], rotuloEquipe: (p: Producao) 
   );
   const linhaDe = (dim: 'categoria' | 'tipo', nomes: string[]) =>
     equipes.map(e => ({
+      unidadeId: e.unidade_id,
       rotulo: rotuloEquipe(e),
       valores: nomes.map(n => doPeriodo.find(l => l.unidade_id === e.unidade_id && l.equipe === e.equipe && l.dimensao === dim && l.item === n)?.quantidade ?? 0),
     }));

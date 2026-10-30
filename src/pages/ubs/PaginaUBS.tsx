@@ -83,7 +83,7 @@ export function PaginaUBS() {
         <>
           <BarraDeAbas abas={ABAS} atual={aba} aoMudar={setAba} />
           {/* key={u.id}: ao trocar de UBS, a aba recomeça do zero */}
-          {aba === 'painel' && <AbaPainel key={u.id} unidade={u} campos={campos} />}
+          {aba === 'painel' && <AbaPainel key={u.id} unidade={u} campos={campos} aoIrPara={id => { setAba(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />}
           {aba === 'ficha' && <AbaFicha key={u.id} unidade={u} campos={campos} editavel={editavel} aoEditar={() => setModal(u)} />}
           {aba === 'equipe' && <AbaEquipe key={u.id} unidade={u} editavel={editavel} />}
           {aba === 'restricoes' && <AbaRestricoes key={u.id} unidade={u} unidades={unidades} />}
