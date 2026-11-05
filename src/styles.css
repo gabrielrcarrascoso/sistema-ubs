@@ -1086,15 +1086,9 @@ a.ind-cartao:hover { border-color: var(--primario-borda); transform: translateY(
 .seletor-mes { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--muted); }
 .seletor-mes select { font-weight: 750; color: var(--text); }
 
-/* andamento do mês: uma linha por UBS */
-.andamento { display: grid; gap: 4px; }
-.andamento-linha { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.4fr) auto; align-items: center; gap: 16px; padding: 10px 4px; border-bottom: 1px solid var(--linha-2); }
+/* quem já lançou o mês: uma linha por UBS */
+.andamento-linha { display: grid; align-items: center; border-bottom: 1px solid var(--linha-2); }
 .andamento-linha:last-child { border-bottom: 0; }
-.andamento-nome b { display: block; font-size: 14px; }
-.andamento-nome small, .andamento-barra small { font-size: 12px; color: var(--muted); }
-.andamento-barra { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
-.andamento-barra .mini-trilho { margin-top: 0; height: 8px; }
-.andamento-acao { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; }
 
 /* cartões de indicador clicáveis (abrem o detalhe) */
 button.ind-cartao { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
@@ -1122,9 +1116,23 @@ button.ind-cartao:focus-visible { outline: 2px solid var(--foco); outline-offset
 .field [aria-invalid='true'] { border-color: var(--danger); }
 
 @media (max-width: 780px) {
-  .andamento-linha { grid-template-columns: 1fr; gap: 8px; }
-  .andamento-acao { justify-content: space-between; }
   .lancar-item { grid-template-columns: 1fr; }
   .lancar-item-resultado { justify-items: start; text-align: left; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; }
   .lancar-item-campos .label { min-height: 0; }
+}
+
+/* visão geral dos indicadores, versão enxuta */
+.faixa-vazia { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding: 14px 18px; border: 1px dashed var(--linha-forte); border-radius: 14px; background: var(--superficie-2); color: var(--tinta-2); font-size: 13.5px; }
+.faixa-vazia svg { flex-shrink: 0; color: var(--primario-texto); }
+.panel.andamento { padding: 6px 20px; }
+.andamento-linha { grid-template-columns: minmax(120px, 200px) 1fr 84px 92px; gap: 18px; padding: 12px 0; }
+.andamento-linha .mini-trilho { margin-top: 0; height: 8px; }
+.andamento-nome { font-size: 14px; }
+.andamento-conta { font-size: 12.5px; font-weight: 700; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.andamento-conta.completo { color: var(--bom-texto); }
+.andamento-linha .btn { justify-self: end; }
+.ind-cartao .ind-rodape { margin-top: auto; }
+@media (max-width: 780px) {
+  .andamento-linha { grid-template-columns: 1fr auto auto; gap: 8px 12px; }
+  .andamento-linha .mini-trilho { grid-column: 1 / -1; grid-row: 2; }
 }
