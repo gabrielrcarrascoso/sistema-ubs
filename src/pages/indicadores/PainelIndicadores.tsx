@@ -1,20 +1,26 @@
 import { useState } from 'react';
-import { BarChart3, CalendarPlus, Upload } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { BarChart3, CalendarPlus, CheckCheck, ClipboardList, Hospital, Target } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta } from '../../lib/hooks';
 import { agregar, buscarIndicadores, buscarLancamentos, descreverFormula } from '../../lib/indicadores';
-import type { Lancamento } from '../../lib/types';
-import { atingiuMeta, mesAno, numeroBR, ultimosMeses, valorIndicador } from '../../lib/util';
-import { CODIGO_ATENDIMENTOS } from '../../lib/paineis';
-import { GraficoBarras } from '../../components/GraficoBarras';
-import { Dica, Carregando, Cartao, Erro, EstadoVazio, Painel } from '../../components/ui';
+import { serieMensal } from '../../lib/paineis';
+import type { Indicador, Lancamento, Unidade } from '../../lib/types';
+import { atingiuMeta, mesAno, ultimosMeses, valorIndicador } from '../../lib/util';
+import { BarrasH, CartaoGrafico, GraficoVazio, Linhas, Numero, SeloSituacao, SERIES } from '../../components/graficos';
+import { Carregando, Erro, Modal } from '../../components/ui';
 
+/**
+ * Visão geral dos indicadores: escolha o mês e veja, de cima para baixo,
+ * 1) como estão as metas, 2) o que cada UBS já lançou e validou, 3) cada indicador, 4) a comparação entre UBS.
+ * Tudo leva ao detalhe ou ao lançamento.
+ */
 export function PainelIndicadores() {
-  const { perfil } = useAuth();
+  const { podeEditar } = useAuth();
+  const navegar = useNavigate();
+  const [mesEscolhido, setMesEscolhido] = useState<string | null>(null);
   const [unidadeId, setUnidadeId] = useState('');
-  const [indicadorId, setIndicadorId] = useState('');
-  const [qtdMeses, setQtdMeses] = useState(6);
+  const [detalhe, setDetalhe] = useState<Indicador | null>(null);
 
   const { dados, carregando, erro } = useConsulta(async () => {
     const [indicadores, unidades, lancamentos] = await Promise.all([
@@ -27,174 +33,281 @@ export function PainelIndicadores() {
 
   if (carregando) return <Carregando />;
   if (erro || !dados) return <Erro mensagem={erro} />;
-
   const { indicadores, unidades, lancamentos } = dados;
-  const filtrados = lancamentos.filter(l => !unidadeId || l.unidade_id === unidadeId);
-  const meses = ultimosMeses(qtdMeses);
 
-  // Valor de um indicador num mês (somando as unidades do filtro)
-  const valorNoMes = (indId: string, mes: string) =>
-    agregar(filtrados.filter(l => l.indicador_id === indId && l.competencia.startsWith(mes.slice(0, 7))));
+  // mês de referência: o último com números (ou o mês passado, quando ainda não há nenhum)
+  const meses = ultimosMeses(13).slice(0, -1).reverse(); // os 12 meses fechados, do mais recente
+  const ultimoComDado = lancamentos.length ? lancamentos.map(l => l.competencia.slice(0, 7)).sort().at(-1)! + '-01' : null;
+  const mes = mesEscolhido ?? ultimoComDado ?? meses[0];
+  const doMes = (l: Lancamento) => l.competencia.startsWith(mes.slice(0, 7));
+  const lancsMes = lancamentos.filter(doMes);
+  const mensais = indicadores.filter(i => i.periodicidade === 'Mensal');
+  const filtrados = (ls: Lancamento[]) => ls.filter(l => !unidadeId || l.unidade_id === unidadeId);
 
-  // Último mês que tem algum dado
-  const ultimoMesComDado = filtrados.length ? filtrados.map(l => l.competencia.slice(0, 10)).sort().at(-1)! : null;
-
-  // C1 traz os atendimentos do mês (numerador) e a variação em relação ao mês anterior; I1 é a produtividade
-  const atendimentos = indicadores.find(i => i.codigo === CODIGO_ATENDIMENTOS);
-  const produtividade = indicadores.find(i => i.codigo === 'I1');
-  const atendimentosNoMes = (mes: string) => {
-    const ls = filtrados.filter(l => l.indicador_id === atendimentos?.id && l.competencia.startsWith(mes.slice(0, 7)));
-    return ls.length ? ls.reduce((s, l) => s + Number(l.numerador), 0) : null;
-  };
-  const indSelecionado = indicadores.find(i => i.id === indicadorId) ?? produtividade ?? indicadores[0];
-
+  const valorNoMes = (i: Indicador) => agregar(filtrados(lancsMes).filter(l => l.indicador_id === i.id));
   const resumo = indicadores.map(i => {
-    const valor = ultimoMesComDado ? valorNoMes(i.id, ultimoMesComDado) : null;
-    return { indicador: i, valor, ok: atingiuMeta(valor, i.meta, i.sentido_meta) };
+    const valor = valorNoMes(i);
+    return { i, valor, ok: atingiuMeta(valor, i.meta, i.sentido_meta), ubsComDado: new Set(lancsMes.filter(l => l.indicador_id === i.id).map(l => l.unidade_id)).size };
   });
   const comMeta = resumo.filter(r => r.ok !== null);
   const atingidas = comMeta.filter(r => r.ok).length;
 
-  // Tabela indicador × unidade no último mês
-  const porUnidade = (indId: string, uniId: string): Lancamento | undefined =>
-    lancamentos.find(l => l.indicador_id === indId && l.unidade_id === uniId && ultimoMesComDado && l.competencia.startsWith(ultimoMesComDado.slice(0, 7)));
+  // andamento do mês por UBS
+  const andamento = unidades.map(u => {
+    const daUbs = lancsMes.filter(l => l.unidade_id === u.id);
+    const lancados = mensais.filter(i => daUbs.some(l => l.indicador_id === i.id)).length;
+    return { u, lancados, validados: daUbs.filter(l => l.validado).length, total: daUbs.length };
+  });
+  const esperados = mensais.length * unidades.length;
+  const lancadosTotal = andamento.reduce((s, a) => s + a.lancados, 0);
+  const aValidar = lancsMes.filter(l => !l.validado).length;
+  const completas = andamento.filter(a => a.lancados >= mensais.length).length;
 
-  const podeLancar = perfil?.papel !== 'profissional';
-
-  // Ainda sem nenhum número: em vez de um painel cheio de "—", mostra como começar
-  if (lancamentos.length === 0) {
-    return (
-      <EstadoVazio icone={BarChart3} titulo="O painel aparece assim que houver números">
-        <ol className="passos">
-          <li><b>Confira as definições</b> dos indicadores na aba <Link to="/indicadores?aba=definicoes">Definições</Link>.</li>
-          <li><b>Lance os números do mês</b> de cada UBS, tirados do e-SUS/PEC.</li>
-          <li><b>Volte aqui</b> para ver gráficos, metas atingidas e a comparação entre as UBS.</li>
-        </ol>
-        {podeLancar && (
-          <div className="actions" style={{ justifyContent: 'center', marginTop: 18 }}>
-            <Link to="/indicadores?aba=lancar&novo=1" className="btn primary"><CalendarPlus size={16} strokeWidth={1.8} /> Lançar o primeiro mês</Link>
-            <Link to="/indicadores?aba=lancar" className="btn"><Upload size={16} strokeWidth={1.8} /> Importar planilha</Link>
-          </div>
-        )}
-      </EstadoVazio>
-    );
-  }
+  const lancar = (u?: Unidade) => navegar(`/indicadores?aba=lancar&novo=1&mes=${mes.slice(0, 7)}${u ? `&unidade=${u.id}` : ''}`);
+  const algumaEditavel = unidades.some(u => podeEditar(u.id));
+  const rolarAte = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
     <>
-      <Dica id="ind-painel">
-        Resumo dos indicadores. Escolha <b>uma UBS</b> ou veja <b>todas juntas</b>. Valores em <b>verde</b> atingiram a meta; em <b>vermelho</b>, não atingiram.
-      </Dica>
       <div className="barra-filtros">
-          <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} aria-label="Unidade">
-            <option value="">Todas as UBS juntas</option>
-            {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        <label className="seletor-mes">
+          <span>Mês</span>
+          <select value={mes} onChange={e => setMesEscolhido(e.target.value)} aria-label="Mês de referência">
+            {meses.map(m => (
+              <option key={m} value={m}>{mesAno(m)}{m === ultimoComDado ? ' · último com números' : ''}</option>
+            ))}
           </select>
-          <select value={qtdMeses} onChange={e => setQtdMeses(Number(e.target.value))} aria-label="Período">
-            <option value={6}>Últimos 6 meses</option>
-            <option value={12}>Últimos 12 meses</option>
-          </select>
-          {ultimoMesComDado && <span className="chip neutral">Último mês com dados: {mesAno(ultimoMesComDado)}</span>}
-          {podeLancar && (
-            <Link to="/indicadores?aba=lancar&novo=1" className="btn primary" style={{ marginLeft: 'auto' }}>
-              <CalendarPlus size={16} strokeWidth={1.8} /> Lançar o mês
-            </Link>
-          )}
-        </div>
+        </label>
+        <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} aria-label="UBS">
+          <option value="">Todas as UBS juntas</option>
+          {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        </select>
+        {algumaEditavel && (
+          <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => lancar()}>
+            <CalendarPlus size={16} strokeWidth={1.8} /> Lançar {mesAno(mes)}
+          </button>
+        )}
+      </div>
 
-      <div className="cards">
-        <Cartao
-          titulo="Atendimentos no mês"
-          valor={ultimoMesComDado && atendimentosNoMes(ultimoMesComDado) !== null ? numeroBR(atendimentosNoMes(ultimoMesComDado)!, 0) : '—'}
-          nota={
-            atendimentos && ultimoMesComDado && atendimentosNoMes(ultimoMesComDado) !== null
-              ? `${mesAno(ultimoMesComDado)} · variação ${valorIndicador(valorNoMes(atendimentos.id, ultimoMesComDado), '%')} (C1)`
-              : 'lançados no C1'
-          }
+      <div className="numeros">
+        <Numero
+          destaque
+          icone={<Target size={15} strokeWidth={2} />}
+          rotulo={`Metas atingidas · ${mesAno(mes)}`}
+          valor={comMeta.length ? `${atingidas} de ${comMeta.length}` : '—'}
+          detalhe={comMeta.length ? 'indicadores com meta e com número no mês' : 'aparece quando houver números lançados'}
+          aoClicar={() => rolarAte('ind-cartoes')}
+          dica="Ver indicadores"
         />
-        <Cartao
-          titulo={produtividade?.nome ?? 'Produtividade'}
-          valor={produtividade && ultimoMesComDado ? valorIndicador(valorNoMes(produtividade.id, ultimoMesComDado), '%') : '—'}
-          nota={produtividade?.meta ? `I1 · meta ≥ ${produtividade.meta}%` : 'I1'}
+        <Numero
+          icone={<ClipboardList size={15} strokeWidth={2} />}
+          rotulo="Números lançados"
+          valor={`${lancadosTotal} de ${esperados}`}
+          detalhe={<span className="mini-trilho"><span style={{ width: `${esperados ? (lancadosTotal / esperados) * 100 : 0}%` }} /></span>}
+          aoClicar={() => rolarAte('ind-andamento')}
+          dica="Ver por UBS"
         />
-        <Cartao titulo="Indicadores monitorados" valor={indicadores.length} nota="Ativos no dicionário" />
-        <Cartao
-          titulo="Metas atingidas"
-          valor={comMeta.length ? `${atingidas}/${comMeta.length}` : '—'}
-          nota="No último mês com dados"
+        <Numero
+          icone={<CheckCheck size={15} strokeWidth={2} />}
+          rotulo="A validar"
+          valor={aValidar}
+          detalhe={aValidar ? 'números esperando conferência' : 'nada esperando conferência'}
+          aoClicar={aValidar ? () => navegar('/indicadores?aba=lancar&validacao=a_validar') : undefined}
+          dica="Conferir"
+        />
+        <Numero
+          icone={<Hospital size={15} strokeWidth={2} />}
+          rotulo="UBS com o mês completo"
+          valor={`${completas} de ${unidades.length}`}
+          detalhe={`${mensais.length} indicadores mensais por UBS`}
         />
       </div>
 
-      {indSelecionado && (
-        <Painel
-          titulo="Evolução por período"
-          acoes={
-            <select value={indSelecionado.id} onChange={e => setIndicadorId(e.target.value)} aria-label="Indicador do gráfico" className="select-simples">
-              {indicadores.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-            </select>
-          }
+      <div className="painel-grade">
+        <CartaoGrafico
+          id="ind-andamento"
+          titulo={`Andamento de ${mesAno(mes)}`}
+          subtitulo="Quanto cada UBS já lançou e quanto já foi conferido"
+          className="largo"
+          tabela={{
+            cabecalho: ['UBS', 'Lançados', 'De', 'Validados'],
+            linhas: andamento.map(a => [a.u.nome, a.lancados, mensais.length, a.validados]),
+          }}
         >
-          <GraficoBarras
-            pontos={meses.map(m => ({ rotulo: mesAno(m), valor: valorNoMes(indSelecionado.id, m) }))}
-            meta={indSelecionado.meta}
-            sufixo={indSelecionado.unidade_medida === '%' ? '%' : ''}
-          />
-          <p className="muted" style={{ marginTop: 10 }}>
-            <b>Fórmula (v{indSelecionado.versao}):</b> {descreverFormula(indSelecionado)} · <b>Fonte:</b> {indSelecionado.fonte_dados}
-            {!unidadeId && indSelecionado.tipo !== 'contagem' && ' · Consolidado = soma dos numeradores ÷ soma dos denominadores.'}
-          </p>
-        </Painel>
-      )}
+          <div className="andamento">
+            {andamento.map(a => {
+              const pct = mensais.length ? (a.lancados / mensais.length) * 100 : 0;
+              const completo = a.lancados >= mensais.length;
+              return (
+                <div key={a.u.id} className="andamento-linha">
+                  <span className="andamento-nome">
+                    <b>{a.u.nome}</b>
+                    <small>{a.lancados === 0 ? 'nada lançado ainda' : `${a.validados} de ${a.total} validado(s)`}</small>
+                  </span>
+                  <span className="andamento-barra">
+                    <span className="mini-trilho"><span style={{ width: `${pct}%` }} /></span>
+                    <small>{a.lancados} de {mensais.length}</small>
+                  </span>
+                  <span className="andamento-acao">
+                    {completo ? (
+                      <SeloSituacao situacao="atingiu" texto="Completo" />
+                    ) : (
+                      <SeloSituacao situacao="sem_dado" texto={`Faltam ${mensais.length - a.lancados}`} />
+                    )}
+                    {podeEditar(a.u.id) && (
+                      <button className={`btn small ${completo ? '' : 'primary'}`} onClick={() => lancar(a.u)}>
+                        {completo ? 'Revisar' : a.lancados ? 'Completar' : 'Lançar'}
+                      </button>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </CartaoGrafico>
+      </div>
 
-      <Painel titulo={`Situação dos indicadores${ultimoMesComDado ? ` · ${mesAno(ultimoMesComDado)}` : ''}`}>
-        <div className="situacao-grid">
-          {resumo.map(({ indicador: i, valor, ok }) => (
-            <button key={i.id} className={`situacao ${ok === null ? '' : ok ? 'ok' : 'abaixo'}`} onClick={() => setIndicadorId(i.id)} title="Ver no gráfico">
-              <span className="situacao-nome">{i.nome}</span>
-              <span className="situacao-valor">{valorIndicador(valor, i.unidade_medida)}</span>
-              <span className="situacao-meta">
-                {i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta'}
-                {ok === true && ' · atingida'}
-                {ok === false && ' · abaixo'}
+      <h2 className="titulo-secao" id="ind-cartoes">
+        Indicadores · {mesAno(mes)}{unidadeId ? ` · ${unidades.find(u => u.id === unidadeId)?.nome}` : ' · todas as UBS juntas'}
+      </h2>
+      <div className="indicadores-ubs">
+        {resumo.map(({ i, valor, ok, ubsComDado }) => {
+          const pct = i.unidade_medida === '%';
+          const max = pct ? Math.max(100, valor ?? 0, i.meta ?? 0) : Math.max(valor ?? 0, i.meta ?? 0, 1) * 1.15;
+          return (
+            <button key={i.id} type="button" className={`ind-cartao ${valor === null ? 'vazio' : ''}`} onClick={() => setDetalhe(i)} title="Ver evolução e comparação entre UBS">
+              <span className="ind-topo">
+                <span className="ind-codigo">{i.codigo}</span>
+                <b className="ind-nome">{i.nome}</b>
+              </span>
+              <span className="ind-valor">{valor === null ? '—' : valorIndicador(valor, i.unidade_medida)}</span>
+              {valor !== null && i.tipo !== 'variacao' && (
+                <span className="barra-trilho ind-barra">
+                  <span className="barra-preenchida" style={{ width: `${Math.max(0, Math.min(100, (valor / max) * 100))}%`, background: ok === false ? 'var(--serie2)' : 'var(--serie1)' }} />
+                  {i.meta !== null && <span className="barra-referencia" style={{ left: `${(i.meta / max) * 100}%` }} />}
+                </span>
+              )}
+              <span className="ind-meta">
+                {i.meta !== null ? `Meta ${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta aprovada'}
+                {!unidadeId && ` · ${ubsComDado} de ${unidades.length} UBS`}
+              </span>
+              <span className="ind-rodape">
+                {valor !== null ? (
+                  <SeloSituacao situacao={ok === null ? 'sem_meta' : ok ? 'atingiu' : 'abaixo'} />
+                ) : (
+                  <span className="ind-precisa">
+                    Precisa de: <b>{i.numerador_desc}</b>
+                    {i.denominador_desc && <> e <b>{i.denominador_desc}</b></>}
+                  </span>
+                )}
               </span>
             </button>
-          ))}
-        </div>
-      </Painel>
+          );
+        })}
+      </div>
 
-        <Painel titulo={`Por unidade${ultimoMesComDado ? ` · ${mesAno(ultimoMesComDado)}` : ''}`}>
-          <div className="tablewrap">
-            <table>
+      {lancsMes.length > 0 && (
+        <>
+          <h2 className="titulo-secao">Comparar as UBS · {mesAno(mes)}</h2>
+          <div className="tablewrap" style={{ marginBottom: 20 }}>
+            <table className="tabela-calor">
               <thead>
-                <tr>
-                  <th>Indicador</th>
-                  {unidades.map(u => <th key={u.id} className="num">{u.nome}</th>)}
-                </tr>
+                <tr><th>Indicador</th>{unidades.map(u => <th key={u.id}>{u.nome}</th>)}</tr>
               </thead>
               <tbody>
                 {indicadores.map(i => (
                   <tr key={i.id}>
-                    <td><b>{i.nome}</b></td>
+                    <td><b>{i.codigo} · {i.nome}</b></td>
                     {unidades.map(u => {
-                      const l = porUnidade(i.id, u.id);
-                      const ok = l ? atingiuMeta(l.valor, i.meta, i.sentido_meta) : null;
-                      return (
-                        <td key={u.id} className="num">
-                          {l ? <span className={`chip ${ok === null ? 'neutral' : ok ? '' : 'bad'}`}>{valorIndicador(l.valor, i.unidade_medida)}</span> : <span className="none">—</span>}
-                        </td>
-                      );
+                      const l = lancsMes.find(x => x.indicador_id === i.id && x.unidade_id === u.id);
+                      if (!l) return <td key={u.id}><SeloSituacao situacao="sem_dado" texto="—" /></td>;
+                      const ok = atingiuMeta(l.valor, i.meta, i.sentido_meta);
+                      return <td key={u.id}><SeloSituacao situacao={ok === null ? 'sem_meta' : ok ? 'atingiu' : 'abaixo'} texto={valorIndicador(l.valor, i.unidade_medida)} /></td>;
                     })}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </Painel>
+        </>
+      )}
 
-      <div className="info">
-        Privacidade por concepção: o sistema trabalha somente com dados agregados por unidade e mês, sem identificar
-        pacientes, conforme a LGPD.
-      </div>
+      <p className="muted" style={{ marginTop: 8 }}>
+        Privacidade por concepção: só dados agregados por UBS e mês, sem identificar pacientes (LGPD).
+      </p>
+
+      {detalhe && (
+        <DetalheIndicador
+          indicador={detalhe}
+          unidades={unidades}
+          lancamentos={lancamentos}
+          mes={mes}
+          aoFechar={() => setDetalhe(null)}
+          aoLancar={algumaEditavel ? () => lancar() : undefined}
+        />
+      )}
     </>
+  );
+}
+
+/** Janela de um indicador: evolução em 12 meses (por UBS), comparação no mês e como é calculado */
+function DetalheIndicador({
+  indicador: i,
+  unidades,
+  lancamentos,
+  mes,
+  aoFechar,
+  aoLancar,
+}: {
+  indicador: Indicador;
+  unidades: Unidade[];
+  lancamentos: Lancamento[];
+  mes: string;
+  aoFechar: () => void;
+  aoLancar?: () => void;
+}) {
+  const sufixo = i.unidade_medida === '%' ? '%' : '';
+  const series = unidades.slice(0, 5).map((u, k) => ({ nome: u.nome, cor: SERIES[k], ...serieMensal(lancamentos.filter(l => l.unidade_id === u.id), i.id) }));
+  const temSerie = series.some(s => s.pontos.some(p => p !== null));
+  const noMes = unidades
+    .map(u => ({ u, l: lancamentos.find(l => l.indicador_id === i.id && l.unidade_id === u.id && l.competencia.startsWith(mes.slice(0, 7))) }))
+    .filter(x => x.l && x.l.valor !== null);
+  return (
+    <Modal titulo={`${i.codigo} · ${i.nome}`} aoFechar={aoFechar}>
+      <p style={{ marginBottom: 14 }}>{i.definicao}</p>
+      <div className="painel-grade detalhe-ind">
+        <CartaoGrafico
+          titulo="Evolução"
+          subtitulo={`Últimos 12 meses, por UBS${i.meta !== null ? ' · linha tracejada = meta' : ''}`}
+          className="largo"
+          tabela={temSerie ? { cabecalho: ['Mês', ...series.map(s => s.nome)], linhas: series[0].rotulos.map((r, k) => [r, ...series.map(s => s.pontos[k] ?? '—')]) } : undefined}
+        >
+          {temSerie ? <Linhas rotulosX={series[0].rotulos} series={series} sufixo={sufixo} meta={i.meta} /> : <GraficoVazio>Ainda não há números deste indicador.</GraficoVazio>}
+        </CartaoGrafico>
+        <CartaoGrafico titulo={`UBS em ${mesAno(mes)}`} subtitulo={i.meta !== null ? 'A linha escura marca a meta' : 'Sem meta aprovada'} className="largo">
+          {noMes.length ? (
+            <BarrasH
+              itens={noMes.map(({ u, l }) => ({ rotulo: u.nome, valor: Number(l!.valor), cor: atingiuMeta(l!.valor, i.meta, i.sentido_meta) === false ? 'var(--serie2)' : 'var(--serie1)' }))}
+              sufixo={sufixo}
+              referencia={i.meta !== null ? { valor: i.meta, rotulo: `meta ${valorIndicador(i.meta, i.unidade_medida)}` } : undefined}
+              maximo={sufixo ? 100 : undefined}
+            />
+          ) : (
+            <GraficoVazio>Nenhuma UBS lançou este indicador em {mesAno(mes)}.</GraficoVazio>
+          )}
+        </CartaoGrafico>
+      </div>
+      <div className="ficha-grid" style={{ marginTop: 14 }}>
+        <div className="ficha-item"><span>Como calcula</span>{descreverFormula(i)}</div>
+        <div className="ficha-item"><span>Meta</span>{i.meta !== null ? `${i.sentido_meta === 'maior' ? '≥' : '≤'} ${valorIndicador(i.meta, i.unidade_medida)}` : 'Sem meta aprovada'}</div>
+        <div className="ficha-item"><span>De onde vem o dado</span>{i.fonte_dados}</div>
+        <div className="ficha-item"><span>Situação dos dados</span>{i.situacao_dados}</div>
+      </div>
+      {i.criterio && <div className="callout" style={{ marginTop: 12 }}><b>Cautela:</b> {i.criterio}</div>}
+      <div className="actions">
+        <button className="btn" onClick={aoFechar}>Fechar</button>
+        {aoLancar && <button className="btn primary" onClick={aoLancar}><BarChart3 size={16} strokeWidth={1.8} /> Lançar números</button>}
+      </div>
+    </Modal>
   );
 }

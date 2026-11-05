@@ -1,5 +1,5 @@
 import { useAuth } from '../../auth/AuthProvider';
-import { BarChart3, BookOpen, Plus, ShieldCheck } from 'lucide-react';
+import { BookOpen, CalendarPlus, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { BarraDeAbas, Cabecalho, useAba, type DefAba } from '../../components/ui';
 import { PainelIndicadores } from './PainelIndicadores';
 import { Lancamentos } from './Lancamentos';
@@ -11,16 +11,17 @@ export function PaginaIndicadores() {
   const { perfil } = useAuth();
   const podeLancar = perfil?.papel !== 'profissional';
   const abas: DefAba[] = [
-    { id: 'painel', rotulo: 'Painel', icone: BarChart3 },
-    { id: 'lancar', rotulo: 'Lançar dados', icone: Plus, oculta: !podeLancar },
-    { id: 'qualidade', rotulo: 'Qualidade dos dados', icone: ShieldCheck },
-    { id: 'definicoes', rotulo: 'Definições', icone: BookOpen },
+    // na ordem do trabalho: acompanhar → lançar → conferir → entender (os ids ficam iguais, para os links continuarem valendo)
+    { id: 'painel', rotulo: 'Visão geral', icone: LayoutDashboard },
+    { id: 'lancar', rotulo: 'Lançar o mês', icone: CalendarPlus, oculta: !podeLancar },
+    { id: 'qualidade', rotulo: 'Conferir dados', icone: ShieldCheck },
+    { id: 'definicoes', rotulo: 'Como cada um é calculado', icone: BookOpen },
   ];
   const [aba, setAba] = useAba(abas, 'painel');
 
   return (
     <>
-      <Cabecalho titulo="Indicadores" subtitulo="Números mensais das UBS, calculados sempre do mesmo jeito." />
+      <Cabecalho titulo="Indicadores" subtitulo="Lance os números de cada mês, confira e acompanhe as metas de cada UBS." />
       <BarraDeAbas abas={abas} atual={aba} aoMudar={setAba} />
       {aba === 'painel' && <PainelIndicadores />}
       {aba === 'lancar' && <Lancamentos />}

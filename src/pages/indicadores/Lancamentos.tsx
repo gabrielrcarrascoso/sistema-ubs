@@ -32,10 +32,11 @@ export function Lancamentos() {
   const [filtroUnidade, setFiltroUnidade] = useState('');
   const [filtroIndicador, setFiltroIndicador] = useState('');
   const [meses, setMeses] = useState(12);
-  const [filtroValidacao, setFiltroValidacao] = useState<'' | 'a_validar' | 'validados'>('');
+  const [params] = useSearchParams();
+  // a Visão geral pode abrir esta aba já filtrada (?validacao=a_validar) ou com o mês e a UBS escolhidos (?mes=&unidade=)
+  const [filtroValidacao, setFiltroValidacao] = useState<'' | 'a_validar' | 'validados'>(params.get('validacao') === 'a_validar' ? 'a_validar' : '');
   const [form, setForm] = useState<Formulario | null>(null);
   const [importando, setImportando] = useState(false);
-  const [params] = useSearchParams();
   const [lancandoMes, setLancandoMes] = useState(params.get('novo') === '1'); // vindo do botão "Lançar o mês" do painel
   const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -315,8 +316,11 @@ export function Lancamentos() {
         <LancarMes
           indicadores={indicadores}
           unidades={unidadesEditaveis}
-          unidadeInicial={perfil?.unidade_id && podeEditar(perfil.unidade_id) ? perfil.unidade_id : unidadesEditaveis[0]?.id ?? ''}
-          mesInicial={mesAnterior()}
+          unidadeInicial={
+            unidadesEditaveis.some(u => u.id === params.get('unidade')) ? params.get('unidade')!
+            : perfil?.unidade_id && podeEditar(perfil.unidade_id) ? perfil.unidade_id : unidadesEditaveis[0]?.id ?? ''
+          }
+          mesInicial={/^\d{4}-\d{2}$/.test(params.get('mes') ?? '') ? params.get('mes')! : mesAnterior()}
           aoFechar={() => setLancandoMes(false)}
           aoSalvar={n => {
             setLancandoMes(false);
