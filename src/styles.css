@@ -168,7 +168,7 @@ td.num, th.num { text-align: right; }
 
 /* ---------- Abas internas ---------- */
 .abas { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin: 0 0 20px; overflow-x: auto; }
-.aba { border: 0; background: none; padding: 11px 16px; font-weight: 750; font-size: 14px; color: var(--tinta-2); border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; border-radius: 8px 8px 0 0; }
+.aba { border: 0; background: none; padding: 11px 16px; font-weight: 750; font-size: 14px; color: var(--tinta-2); white-space: nowrap; }
 .aba:hover { color: var(--text); background: var(--superficie-3); }
 .aba.ativa { color: var(--primary); border-bottom-color: var(--primary); }
 .barra-aba { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -190,7 +190,6 @@ td.num, th.num { text-align: right; }
 .tarefa .texto b { display: block; font-size: 14px; }
 .tarefa .texto small { color: var(--muted); font-size: 12.5px; }
 .tarefa .ir { color: var(--primary); font-weight: 800; white-space: nowrap; font-size: 13px; }
-.tarefa.alta { border-left: 4px solid var(--aviso); }
 .atalhos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .atalho { display: block; padding: 18px; border-radius: 14px; background: var(--superficie); border: 1px solid var(--line); text-decoration: none; color: inherit; }
 .atalho:hover { border-color: var(--primary); }
@@ -372,7 +371,7 @@ td.num, th.num { text-align: right; }
 
 /* ---------- Situação dos indicadores ---------- */
 .situacao-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-.situacao { text-align: left; border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--superficie-2); border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: column; gap: 4px; font: inherit; color: inherit; }
+.situacao { text-align: left; border: 1px solid var(--line); background: var(--superficie-2); border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: column; gap: 4px; font: inherit; color: inherit; }
 .situacao:hover { border-color: var(--primario-borda); }
 .situacao.ok { border-left-color: var(--primary); }
 .situacao.abaixo { border-left-color: var(--critico); }
@@ -406,7 +405,7 @@ td.num, th.num { text-align: right; }
 
 /* ---------- Restrições em cartões ---------- */
 .cartoes-restricao { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 12px; }
-.cartao-restricao { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--superficie-2); }
+.cartao-restricao { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--superficie-2); }
 .cartao-restricao.alerta { border-left-color: var(--aviso); }
 .cartao-restricao header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .cartao-restricao header b { font-size: 14.5px; }
