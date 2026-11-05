@@ -92,6 +92,21 @@ td, .barra-valor, .barra-meta-valor, .andamento-conta, .mini-trilho, .seletor-me
 /* ícones dos números: só o ícone verde, sem o quadradinho colorido (antes cada um tinha uma cor
    e o quadradinho tomava o espaço do nome); o número em destaque mantém o seu selo */
 :root:not([data-theme='dark']) .numeros > .numero:not(.destaque) .numero-rotulo svg { background: none; padding: 0; color: var(--primary); }
+/* número em destaque no claro: o fundo tem um brilho dourado, e o cinza apagado ficava abaixo de 4,5:1 ali */
+:root:not([data-theme='dark']) .numero.destaque .numero-rotulo,
+:root:not([data-theme='dark']) .numero.destaque .numero-detalhe { color: var(--tinta-2); }
+/* nomes da barra de baixo do celular: no mínimo 11px para ler bem */
+@media (max-width: 780px) {
+  /* cada item com largura proporcional ao nome: "Questionários" ganha mais espaço que "UBS" */
+  .nav-inferior { display: flex; padding-left: 4px; padding-right: 4px; }
+  .nav-inferior a { flex: 1 1 auto; min-width: 0; font-size: 11px; font-weight: 700; letter-spacing: -0.01em; padding-left: 2px; padding-right: 2px; text-align: center; }
+}
+/* celular estreito: o cargo sai da barra de cima (só o nome fica) para o botão Sair não ser cortado */
+@media (max-width: 400px) {
+  .side .brand { min-width: 0; }
+  .side-user > div:first-child { font-size: 0; }
+  .side-user > div:first-child strong { font-size: 12.5px; }
+}
 
 /* ---------- Faixas coloridas grossas na lateral: viram borda fina ---------- */
 .situacao, .situacao.ok, .situacao.abaixo, .cartao-restricao, .cartao-restricao.alerta { border-left-width: 1px; border-left-color: var(--line); }
