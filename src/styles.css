@@ -983,10 +983,7 @@ tr:hover td { background: var(--superficie-2); }
 :root:not([data-theme='dark']) .numero.destaque .numero-rotulo svg {
   box-sizing: content-box; padding: 6px; border-radius: 9px; background: #fdf3df; color: #b07a12;
 }
-:root:not([data-theme='dark']) .numero.destaque .numero-valor {
-  background: linear-gradient(135deg, #0b5e51 0%, #12917e 60%, #2fb59d 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
+:root:not([data-theme='dark']) .numero.destaque .numero-valor { color: var(--primario-texto); }
 :root:not([data-theme='dark']) .numero.destaque::after {
   opacity: 0.07;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M16.5 9h7v7.5H31v7h-7.5V31h-7v-7.5H9v-7h7.5z' fill='%230E7C6B'/%3E%3C/svg%3E") center / contain no-repeat;

@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthProvider';
 import { App } from './App';
 import { ProvedorConfirmacao, ProvedorPergunta } from './components/Confirmacao';
 import './styles.css';
+import './refino.css';
 
 // HashRouter usa endereços como site/#/ubs — funciona em qualquer hospedagem estática (Vercel) sem configuração extra
 createRoot(document.getElementById('root')!).render(

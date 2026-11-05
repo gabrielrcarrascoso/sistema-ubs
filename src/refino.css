@@ -1,0 +1,136 @@
+/* =====================================================================
+   REFINO — camada de acabamento por cima de styles.css.
+   Mantém a identidade (verde, menu escuro, faixa do topo) e cuida dos detalhes:
+   toque e movimento, foco do teclado, contraste, números alinhados,
+   cor sólida no lugar de degradês decorativos e "vidro" só nas barras do celular.
+   Para desfazer tudo: remova o import deste arquivo em main.tsx.
+   ===================================================================== */
+
+:root {
+  /* curvas de movimento: começam rápido e assentam suave */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --t-toque: 140ms;
+  --t-rapido: 180ms;
+  /* cinza dos textos de apoio: mais escuro para passar de 4,5:1 no branco */
+  --muted: #66746f;
+}
+:root[data-theme='dark'] { --muted: #8a9c97; }
+
+/* ---------- Superfícies do navegador ---------- */
+html { -webkit-tap-highlight-color: transparent; text-rendering: optimizeLegibility; }
+input, textarea { caret-color: var(--primary); }
+input[type='checkbox'], input[type='radio'], input[type='range'], progress { accent-color: var(--primary); }
+button, a, .pilula, .aba, .nav { touch-action: manipulation; }
+
+/* foco do teclado visível e com a cor da marca (o mouse não mostra o anel) */
+:where(a, button, summary, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+:where(a, button, summary, [tabindex]):focus:not(:focus-visible) { outline: none; }
+.side :where(a, button):focus-visible, .nav-inferior a:focus-visible { outline-color: var(--primario-claro); }
+
+/* números sempre com algarismos da mesma largura (não "dançam" ao mudar) */
+.numero-valor, .card .value, .unit-card strong, .cartao-ubs-numeros strong, .situacao-valor,
+td, .barra-valor, .barra-meta-valor, .andamento-conta, .mini-trilho, .seletor-mes select {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Toque: tudo que se aperta responde ---------- */
+.btn, .aba, .pilula, .nav, .nav-inferior a, .tarefa, .cartao-ubs, button.ind-cartao, a.ind-cartao,
+.numero.clicavel, .unit-card, .atalho, .situacao, .historico-item, .side-user button, .botao-tema {
+  transition:
+    transform var(--t-toque) var(--ease-out),
+    background-color var(--t-rapido) ease,
+    border-color var(--t-rapido) ease,
+    box-shadow var(--t-rapido) ease,
+    color var(--t-rapido) ease;
+}
+.btn:active:not(:disabled), .aba:active, .pilula:active, .side-user button:active, .botao-tema:active { transform: scale(0.97); }
+.nav:active, .nav-inferior a:active, .historico-item:active { transform: scale(0.98); }
+.tarefa:active, .cartao-ubs:active, button.ind-cartao:active, a.ind-cartao:active,
+.numero.clicavel:active, .unit-card:active, .atalho:active, .situacao:active { transform: scale(0.985); }
+
+/* levantar ao passar o mouse só onde existe mouse (no celular o toque não "gruda") */
+.cartao-ubs:hover, button.ind-cartao:hover, a.ind-cartao:hover, .numero.clicavel:hover,
+:root:not([data-theme='dark']) .cartao-ubs:hover { transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  :root:not([data-theme='dark']) .cartao-ubs:hover, .cartao-ubs:hover, button.ind-cartao:hover, a.ind-cartao:hover, .numero.clicavel:hover { transform: translateY(-2px); }
+  .cartao-ubs:active, button.ind-cartao:active, a.ind-cartao:active, .numero.clicavel:active { transform: translateY(-1px) scale(0.985); }
+}
+.numero-ir { transition: opacity var(--t-rapido) ease, transform var(--t-rapido) var(--ease-out); }
+.definicao .seta { transition: transform var(--t-rapido) var(--ease-out); }
+
+/* ---------- Janelas: entram com leveza, centradas ---------- */
+@keyframes refino-veu { from { opacity: 0; } }
+@keyframes refino-janela { from { opacity: 0; transform: translateY(6px) scale(0.97); } }
+.modal-bg { animation: refino-veu 200ms ease-out both; }
+.modal { animation: refino-janela 240ms var(--ease-out) both; transform-origin: center; }
+.grafico-dica { transition: left 90ms linear, top 90ms linear; }
+
+/* ---------- Cor sólida onde havia degradê decorativo ---------- */
+/* barras de progresso e de dados: um verde só */
+.progresso div, .fill, .mini-trilho > span { background: var(--primary); }
+:root[data-theme='dark'] .progresso div, :root[data-theme='dark'] .fill, :root[data-theme='dark'] .mini-trilho > span { background: var(--primario-claro); }
+/* botão principal no claro: verde chapado, com o brilho de borda que dá volume */
+:root:not([data-theme='dark']) .btn.primary { background: var(--primary); }
+:root:not([data-theme='dark']) .btn.primary:hover:not(:disabled) { background: var(--primary-dark); }
+/* traço dos títulos: verde sólido */
+:root:not([data-theme='dark']) .cartao-grafico h2::before,
+:root:not([data-theme='dark']) .titulo-secao::before { background: var(--primary); }
+
+/* ---------- Números do topo ---------- */
+/* o número principal continua o maior da tela, mas sem parecer cartaz */
+.numero.destaque .numero-valor { font-size: 44px; letter-spacing: -0.035em; }
+@media (max-width: 780px) { .numero.destaque .numero-valor { font-size: 38px; } }
+/* o ícone não é espremido quando o nome quebra em duas linhas (antes ele sumia) */
+.numero-rotulo svg, .barra-filtros svg, .faixa-vazia svg, .tarefa .icone svg { flex-shrink: 0; }
+.numero-rotulo { line-height: 1.3; }
+.numero.clicavel .numero-rotulo { padding-right: 24px; }
+.numero-ir { top: 16px; right: 14px; }
+/* ícones dos números: só o ícone verde, sem o quadradinho colorido (antes cada um tinha uma cor
+   e o quadradinho tomava o espaço do nome); o número em destaque mantém o seu selo */
+:root:not([data-theme='dark']) .numeros > .numero:not(.destaque) .numero-rotulo svg { background: none; padding: 0; color: var(--primary); }
+
+/* ---------- Faixas coloridas grossas na lateral: viram borda fina ---------- */
+.situacao, .situacao.ok, .situacao.abaixo, .cartao-restricao, .cartao-restricao.alerta { border-left-width: 1px; border-left-color: var(--line); }
+.situacao.abaixo { border-color: var(--perigo-borda); }
+.cartao-restricao.alerta { border-color: var(--aviso-borda); }
+
+/* ---------- Títulos de tabela e de grupo: sem caixa-alta espaçada ---------- */
+th { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 650; color: var(--muted); }
+:root:not([data-theme='dark']) th { color: var(--muted); }
+.quadro-faltas th:not(:first-child) { font-size: 12px; }
+.lancar-grupo, .ficha-secao h3, .historico-dia h3 { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 750; }
+
+/* ---------- Vidro: só nas barras do celular, por cima do conteúdo que rola ---------- */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 780px) {
+    .side, .nav-inferior {
+      background: rgba(11, 38, 34, 0.78);
+      -webkit-backdrop-filter: blur(20px) saturate(170%);
+      backdrop-filter: blur(20px) saturate(170%);
+    }
+    :root[data-theme='dark'] .side, :root[data-theme='dark'] .nav-inferior { background: rgba(7, 14, 13, 0.72); }
+    .side { box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07); }
+    .nav-inferior { border-top: 1px solid rgba(255, 255, 255, 0.10); box-shadow: 0 -10px 30px -12px rgba(0, 0, 0, 0.35); }
+    .nav-inferior a { font-weight: 750; letter-spacing: 0.01em; }
+  }
+  /* barra de progresso do questionário: o conteúdo passa por baixo, desfocado */
+  .progresso-fixo {
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+  }
+}
+
+/* ---------- Acessibilidade de movimento e transparência ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .loading::before { animation-duration: 1.6s !important; animation-iteration-count: infinite !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .side, .nav-inferior { background: var(--side) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .progresso-fixo { background: var(--bg) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
