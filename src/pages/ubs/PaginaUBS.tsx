@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, FileText, Flag, Hospital, LayoutDashboard, MapPin, Pencil, Plus, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta, useUnidadeEscolhida } from '../../lib/hooks';
@@ -30,6 +30,14 @@ export function PaginaUBS() {
   const [unidadeId, setUnidadeId] = useUnidadeEscolhida(unidadesQ.dados, perfil?.unidade_id);
   const [aba, setAba] = useAba(ABAS, 'painel');
   const [modal, setModal] = useState<Partial<Unidade> | null>(null);
+  // UBS recém-criada: só dá para abrir depois que a lista recarrega com ela
+  const [abrirDepois, setAbrirDepois] = useState<string | null>(null);
+  useEffect(() => {
+    if (abrirDepois && unidadesQ.dados?.some(x => x.id === abrirDepois)) {
+      setUnidadeId(abrirDepois);
+      setAbrirDepois(null);
+    }
+  }, [unidadesQ.dados, abrirDepois, setUnidadeId]);
 
   if (unidadesQ.carregando || camposQ.carregando) return <Carregando />;
   const unidades = unidadesQ.dados ?? [];
@@ -100,7 +108,7 @@ export function PaginaUBS() {
           aoFechar={() => setModal(null)}
           aoSalvar={id => {
             setModal(null);
-            if (id) setUnidadeId(id);
+            if (id) setAbrirDepois(id);
             unidadesQ.recarregar();
           }}
         />

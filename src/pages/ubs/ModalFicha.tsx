@@ -73,6 +73,7 @@ export function ModalFicha({
   }
 
   return (
+    <>
     <Modal titulo={u.id ? `Editar ficha · ${inicial.nome}` : 'Cadastrar nova UBS'} aoFechar={aoFechar}>
       <form onSubmit={salvar}>
         <Erro mensagem={erro} />
@@ -134,6 +135,7 @@ export function ModalFicha({
           <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
         </div>
       </form>
+    </Modal>
       {excluir && u.id && (
         <ModalExcluirUbs
           unidade={{ id: u.id, nome: inicial.nome ?? u.nome ?? '' }}
@@ -145,6 +147,6 @@ export function ModalFicha({
           aoExcluir={() => aoSalvar('')}
         />
       )}
-    </Modal>
+    </>
   );
 }

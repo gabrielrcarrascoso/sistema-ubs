@@ -6,15 +6,15 @@ import { numeroBR } from '../../lib/util';
 import { Erro, Modal } from '../../components/ui';
 
 /** O que é apagado junto com a UBS (o banco apaga em cascata) */
-const DEPENDENTES: { tabela: string; rotulo: string }[] = [
-  { tabela: 'lancamentos', rotulo: 'números de indicadores' },
-  { tabela: 'producao', rotulo: 'totais de produção do e-SUS' },
-  { tabela: 'producao_profissionais', rotulo: 'profissionais da planilha' },
-  { tabela: 'equipes', rotulo: 'cargos da equipe' },
-  { tabela: 'restricoes', rotulo: 'restrições' },
-  { tabela: 'pendencias', rotulo: 'pendências' },
-  { tabela: 'coletas', rotulo: 'visitas de campo' },
-  { tabela: 'aplicacoes', rotulo: 'respostas de questionário' },
+const DEPENDENTES: { tabela: string; um: string; varios: string }[] = [
+  { tabela: 'lancamentos', um: 'número de indicador', varios: 'números de indicadores' },
+  { tabela: 'producao', um: 'total de produção do e-SUS', varios: 'totais de produção do e-SUS' },
+  { tabela: 'producao_profissionais', um: 'profissional da planilha', varios: 'profissionais da planilha' },
+  { tabela: 'equipes', um: 'cargo da equipe', varios: 'cargos da equipe' },
+  { tabela: 'restricoes', um: 'restrição', varios: 'restrições' },
+  { tabela: 'pendencias', um: 'pendência', varios: 'pendências' },
+  { tabela: 'coletas', um: 'visita de campo', varios: 'visitas de campo' },
+  { tabela: 'aplicacoes', um: 'resposta de questionário', varios: 'respostas de questionário' },
 ];
 
 /** Excluir uma UBS de vez, com tudo o que é dela. Só o administrador geral chega aqui. */
@@ -42,7 +42,7 @@ export function ModalExcluirUbs({
       supabase.from(tabela).select('id', { count: 'exact', head: true }).eq('unidade_id', unidade.id).then(r => r.count ?? 0);
     Promise.all([...DEPENDENTES.map(d => contar(d.tabela)), contar('perfis')]).then(totais => {
       if (cancelado) return;
-      setContagens(DEPENDENTES.map((d, i) => ({ rotulo: d.rotulo, total: totais[i] })).filter(c => c.total > 0));
+      setContagens(DEPENDENTES.map((d, i) => ({ rotulo: totais[i] === 1 ? d.um : d.varios, total: totais[i] })).filter(c => c.total > 0));
       setUsuarios(totais[DEPENDENTES.length]);
     });
     return () => {
@@ -99,7 +99,7 @@ export function ModalExcluirUbs({
           </div>
         )}
 
-        <label className="field" style={{ marginTop: 16 }}>
+        <label className="field" style={{ display: 'block', marginTop: 18 }}>
           <span className="label">Para confirmar, digite o nome da UBS: <b>{unidade.nome}</b></span>
           <input value={digitado} onChange={e => setDigitado(e.target.value)} autoComplete="off" aria-describedby="exclusao-dica" />
           <span className="hint" id="exclusao-dica">Maiúsculas e minúsculas não importam.</span>
