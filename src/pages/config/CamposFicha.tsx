@@ -3,10 +3,9 @@ import { useConfirmar } from '../../components/Confirmacao';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase, traduzErro } from '../../lib/supabase';
 import { ok, useConsulta } from '../../lib/hooks';
-import type { CampoFicha, TipoCampo, Unidade } from '../../lib/types';
+import type { CampoFicha, TipoCampo } from '../../lib/types';
 import { lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../../components/CampoDinamico';
 import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
-import { ModalExcluirUbs } from '../ubs/ModalExcluirUbs';
 
 export async function buscarCamposFicha(somenteAtivos = true): Promise<CampoFicha[]> {
   let q = supabase.from('campos_ficha').select('*').order('ordem').order('nome');
@@ -125,7 +124,6 @@ export function CamposFicha() {
         </Painel>
       ))}
 
-      <UbsDesativadas />
 
       {editando && (
         <Modal titulo={editando.id ? `Editar campo` : 'Novo campo da ficha'} aoFechar={() => setEditando(null)}>
@@ -178,50 +176,5 @@ export function CamposFicha() {
         </Modal>
       )}
     </>
-  );
-}
-
-/** UBS desativadas pelo administrador geral, com opção de reativar */
-function UbsDesativadas() {
-  const confirmar = useConfirmar();
-  const [erro, setErro] = useState<string | null>(null);
-  const [excluir, setExcluir] = useState<Unidade | null>(null);
-  const { dados, recarregar } = useConsulta(
-    async () => ok<Unidade[]>(await supabase.from('unidades').select('*').eq('ativa', false).order('nome')),
-    [],
-  );
-  if (!dados?.length) return null;
-
-  async function reativar(u: Unidade) {
-    if (!(await confirmar(`Reativar "${u.nome}"? Ela volta a aparecer em todas as telas.`, { botao: 'Reativar' }))) return;
-    const { error } = await supabase.from('unidades').update({ ativa: true }).eq('id', u.id);
-    if (error) return setErro(traduzErro(error));
-    recarregar();
-  }
-
-  return (
-    <Painel titulo="UBS desativadas">
-      <p className="muted" style={{ marginBottom: 6 }}>Somem das telas, mas os dados continuam guardados. Reative para voltar a usar, ou exclua de vez se não for precisar mais.</p>
-      <Erro mensagem={erro} />
-      {dados.map(u => (
-        <div className="item row-flex" key={u.id}>
-          <b>{u.nome}</b>
-          <span className="acoes-linha">
-            <button className="btn small" onClick={() => reativar(u)}>Reativar</button>
-            <button className="btn small danger" onClick={() => setExcluir(u)}><Trash2 size={14} strokeWidth={1.8} /> Excluir de vez</button>
-          </span>
-        </div>
-      ))}
-      {excluir && (
-        <ModalExcluirUbs
-          unidade={excluir}
-          aoFechar={() => setExcluir(null)}
-          aoExcluir={() => {
-            setExcluir(null);
-            recarregar();
-          }}
-        />
-      )}
-    </Painel>
   );
 }

@@ -162,3 +162,7 @@ th { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 650;
    (texto branco sobre fundo branco = botão invisível) */
 :root:not([data-theme='dark']) .btn.perigo-cheio { background: var(--danger); border-color: var(--danger); color: #fff; }
 :root:not([data-theme='dark']) .btn.perigo-cheio:hover:not(:disabled) { background: var(--perigo-escuro); border-color: var(--perigo-escuro); }
+/* Configurações › UBS */
+.tabela-ubs td.num { white-space: nowrap; }
+.tabela-ubs .acoes-ubs { display: inline-flex; gap: 6px; justify-content: flex-end; }
+.tabela-ubs tr.desativada td:not(.num) { opacity: 0.6; }

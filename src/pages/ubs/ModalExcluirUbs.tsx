@@ -94,7 +94,7 @@ export function ModalExcluirUbs({
 
         {aoDesativar && (
           <div className="alternativa-exclusao">
-            <span><b>Só quer tirar a UBS das telas?</b> Desative: ela some, mas todos os dados ficam guardados e dá para reativar depois.</span>
+            <span><b>Só quer tirar a UBS das telas?</b> Desative: ela some, mas todos os dados ficam guardados e dá para reativar depois em Configurações › UBS.</span>
             <button type="button" className="btn" onClick={aoDesativar}><Archive size={16} strokeWidth={1.8} /> Desativar em vez disso</button>
           </div>
         )}

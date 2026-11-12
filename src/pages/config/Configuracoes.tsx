@@ -1,6 +1,7 @@
 import { BarraDeAbas, Cabecalho, useAba, type DefAba } from '../../components/ui';
-import { Download, FileSpreadsheet, FileText, Grid3x3, History, Users } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Grid3x3, History, Hospital, Users } from 'lucide-react';
 import { Usuarios } from './Usuarios';
+import { GerenciarUbs } from './GerenciarUbs';
 import { CamposFicha } from './CamposFicha';
 import { Atividades } from './Atividades';
 import { Auditoria } from './Auditoria';
@@ -9,6 +10,7 @@ import { ImportarPlanilha } from './ImportarPlanilha';
 
 const ABAS: DefAba[] = [
   { id: 'usuarios', rotulo: 'Usuários', icone: Users },
+  { id: 'ubs', rotulo: 'UBS', icone: Hospital },
   { id: 'ficha', rotulo: 'Ficha das UBS', icone: FileText },
   { id: 'importar', rotulo: 'Importar planilha', icone: FileSpreadsheet },
   { id: 'atividades', rotulo: 'Atividades', icone: Grid3x3 },
@@ -24,6 +26,7 @@ export function Configuracoes() {
       <Cabecalho titulo="Configurações" subtitulo="Área do administrador geral." />
       <BarraDeAbas abas={ABAS} atual={aba} aoMudar={setAba} />
       {aba === 'usuarios' && <Usuarios />}
+      {aba === 'ubs' && <GerenciarUbs />}
       {aba === 'ficha' && <CamposFicha />}
       {aba === 'importar' && <ImportarPlanilha />}
       {aba === 'atividades' && <Atividades />}

@@ -66,7 +66,7 @@ export function ModalFicha({
 
   async function desativar() {
     if (!u.id) return;
-    if (!(await confirmar(`Desativar "${u.nome}"? A UBS some das telas, mas todos os dados ficam guardados. Ela pode ser reativada em Configurações.`, { perigo: true, botao: 'Desativar' }))) return;
+    if (!(await confirmar(`Desativar "${u.nome}"? A UBS some das telas, mas todos os dados ficam guardados. Ela pode ser reativada em Configurações › UBS.`, { perigo: true, botao: 'Desativar' }))) return;
     const { error } = await supabase.from('unidades').update({ ativa: false }).eq('id', u.id);
     if (error) return setErro(traduzErro(error));
     aoSalvar('');
