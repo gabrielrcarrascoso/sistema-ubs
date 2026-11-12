@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Archive, Trash2 } from 'lucide-react';
 import { useConfirmar } from '../../components/Confirmacao';
 import { supabase, traduzErro } from '../../lib/supabase';
 import type { CampoFicha, Unidade } from '../../lib/types';
@@ -6,6 +7,7 @@ import { numOuNull } from '../../lib/util';
 import { Campo, Erro, Modal } from '../../components/ui';
 import { CampoDinamico, vazio } from '../../components/CampoDinamico';
 import { agruparPorSecao } from '../config/CamposFicha';
+import { ModalExcluirUbs } from './ModalExcluirUbs';
 
 /** Janela para criar uma UBS nova ou editar a ficha completa de uma existente */
 export function ModalFicha({
@@ -25,6 +27,7 @@ export function ModalFicha({
   const [u, setU] = useState<Partial<Unidade>>({ dados_ficha: {}, ...inicial });
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [excluir, setExcluir] = useState(false);
   const texto = (campo: keyof Unidade) => ({
     value: (u[campo] as string | null) ?? '',
     onChange: (e: { target: { value: string } }) => setU({ ...u, [campo]: e.target.value }),
@@ -118,14 +121,30 @@ export function ModalFicha({
 
         <div className="actions">
           {podeDesativar && u.id && (
-            <button type="button" className="btn danger" style={{ marginRight: 'auto' }} onClick={desativar}>
-              Desativar UBS
-            </button>
+            <span className="acoes-perigo">
+              <button type="button" className="btn" onClick={desativar} title="Some das telas, mas os dados ficam guardados">
+                <Archive size={16} strokeWidth={1.8} /> Desativar
+              </button>
+              <button type="button" className="btn danger" onClick={() => setExcluir(true)} title="Apaga a UBS e todos os dados dela">
+                <Trash2 size={16} strokeWidth={1.8} /> Excluir
+              </button>
+            </span>
           )}
           <button type="button" className="btn" onClick={aoFechar}>Cancelar</button>
           <button className="btn primary" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
         </div>
       </form>
+      {excluir && u.id && (
+        <ModalExcluirUbs
+          unidade={{ id: u.id, nome: inicial.nome ?? u.nome ?? '' }}
+          aoFechar={() => setExcluir(false)}
+          aoDesativar={() => {
+            setExcluir(false);
+            desativar();
+          }}
+          aoExcluir={() => aoSalvar('')}
+        />
+      )}
     </Modal>
   );
 }

@@ -6,6 +6,7 @@ import { ok, useConsulta } from '../../lib/hooks';
 import type { CampoFicha, TipoCampo, Unidade } from '../../lib/types';
 import { lerOpcoes, NOME_TIPO_CAMPO, TIPO_TEM_OPCOES } from '../../components/CampoDinamico';
 import { BotaoIcone, BarraAba, Dica, Campo, Carregando, Erro, Modal, Painel } from '../../components/ui';
+import { ModalExcluirUbs } from '../ubs/ModalExcluirUbs';
 
 export async function buscarCamposFicha(somenteAtivos = true): Promise<CampoFicha[]> {
   let q = supabase.from('campos_ficha').select('*').order('ordem').order('nome');
@@ -184,6 +185,7 @@ export function CamposFicha() {
 function UbsDesativadas() {
   const confirmar = useConfirmar();
   const [erro, setErro] = useState<string | null>(null);
+  const [excluir, setExcluir] = useState<Unidade | null>(null);
   const { dados, recarregar } = useConsulta(
     async () => ok<Unidade[]>(await supabase.from('unidades').select('*').eq('ativa', false).order('nome')),
     [],
@@ -199,13 +201,27 @@ function UbsDesativadas() {
 
   return (
     <Painel titulo="UBS desativadas">
+      <p className="muted" style={{ marginBottom: 6 }}>Somem das telas, mas os dados continuam guardados. Reative para voltar a usar, ou exclua de vez se não for precisar mais.</p>
       <Erro mensagem={erro} />
       {dados.map(u => (
         <div className="item row-flex" key={u.id}>
           <b>{u.nome}</b>
-          <button className="btn small" onClick={() => reativar(u)}>Reativar</button>
+          <span className="acoes-linha">
+            <button className="btn small" onClick={() => reativar(u)}>Reativar</button>
+            <button className="btn small danger" onClick={() => setExcluir(u)}><Trash2 size={14} strokeWidth={1.8} /> Excluir de vez</button>
+          </span>
         </div>
       ))}
+      {excluir && (
+        <ModalExcluirUbs
+          unidade={excluir}
+          aoFechar={() => setExcluir(null)}
+          aoExcluir={() => {
+            setExcluir(null);
+            recarregar();
+          }}
+        />
+      )}
     </Painel>
   );
 }

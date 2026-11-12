@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileText, Flag, Hospital, LayoutDashboard, MapPin, Plus, Printer, Users } from 'lucide-react';
+import { Download, FileText, Flag, Hospital, LayoutDashboard, MapPin, Pencil, Plus, Printer, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { buscarUnidades, useConsulta, useUnidadeEscolhida } from '../../lib/hooks';
 import type { Unidade } from '../../lib/types';
@@ -59,6 +59,7 @@ export function PaginaUBS() {
           <>
             <button className="btn" onClick={() => window.print()} title="Imprimir ou salvar em PDF"><Printer size={16} strokeWidth={1.8} /> Imprimir</button>
             <button className="btn" onClick={exportarFichas} title="Planilha com a ficha de todas as UBS"><Download size={16} strokeWidth={1.8} /> Fichas (Excel)</button>
+            {u && editavel && <button className="btn" onClick={() => setModal(u)} title={ehGestor ? 'Alterar os dados, desativar ou excluir esta UBS' : 'Alterar os dados desta UBS'}><Pencil size={16} strokeWidth={1.8} /> Editar UBS</button>}
             {ehGestor && <button className="btn primary" onClick={() => setModal({ nome: '', dados_ficha: {} })}><Plus size={16} strokeWidth={1.8} /> Nova UBS</button>}
           </>
         }
